@@ -1,6 +1,4 @@
-packae messages
-
-import "fmt"
+package messages
 
 // hop-by-hop headers
 const T_INT_LIFE int = 0x0001
@@ -37,7 +35,7 @@ const T_NAMESEG_APP3 int = 0x1003
 const T_NAMESEG_APP4 int = 0x1004
 
 // Payload type
-constT_PAYLOADTYPE_DATA int = 0x00
+const T_PAYLOADTYPE_DATA int = 0x00
 const T_PAYLOADTYPE_KEY int = 0x01
 const T_PAYLOADTYPE_LINK int = 0x02
 const T_PAYLOADTYPE_MANIFEST int = 0x3
