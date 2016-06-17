@@ -1,4 +1,4 @@
-package messages
+package codec
 
 // hop-by-hop headers
 const T_INT_LIFE int = 0x0001

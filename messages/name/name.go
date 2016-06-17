@@ -1,51 +1,51 @@
 package name
 
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages/name_segment"
 import "strings"
 import "fmt"
 
 // import "encoding/json"
 
 type Name struct {
-    Segments []NameSegment `json:"segments"`
+    Segments []*name_segment.NameSegment `json:"segments"`
 }
 
-type NameError struct {
+type nameError struct {
     prob string
 }
 
-
-func (e NameError) Error() string {
+func (e nameError) Error() string {
     return fmt.Sprintf("%s", e.prob)
 }
 
 // Name parsing functions
 
-func parseNameStringWithoutSchema(nameString string) ([]NameSegment, error) {
-    segments := make([]NameSegment, 0)
+func parseNameStringWithoutSchema(nameString string) ([]*name_segment.NameSegment, error) {
+    segments := make([]*name_segment.NameSegment, 0)
     for _, segmentString := range(strings.Split(nameString, "/")) {
-        segments = append(segments, NameSegment{segmentString})
+        segments = append(segments, name_segment.Parse(segmentString))
     }
     return segments, nil
 }
 
-func parseNameString(nameString string) ([]NameSegment, error) {
+func parseNameString(nameString string) ([]*name_segment.NameSegment, error) {
     if index := strings.Index(nameString, "ccnx:/"); index == 0 {
         return parseNameStringWithoutSchema(nameString[6:])
     } else if index := strings.Index(nameString, "/"); index == 0 {
         return parseNameStringWithoutSchema(nameString[1:])
     } else {
-        return nil, NameError{"rawr"}
+        return nil, nameError{"rawr"}
     }
 }
 
 // Constructor functions
 
-func New(nameString string) (*Name, error) {
+func Parse(nameString string) (*Name, error) {
     parsedSegments, err := parseNameString(nameString)
     if (err != nil) {
         // TODO: what to return here?
-        return nil, NameError{"rawr"}
+        return nil, nameError{"rawr"}
     }
     return &Name{Segments: parsedSegments}, nil
 }
@@ -53,7 +53,7 @@ func New(nameString string) (*Name, error) {
 // TLV interface functions
 
 func (n Name) Type() uint16 {
-    return uint16(1)
+    return uint16(codec.T_NAME)
 }
 
 func (n Name) TypeString() string {
