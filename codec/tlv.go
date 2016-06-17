@@ -5,15 +5,28 @@ package codec
 
 type TLV interface {
     Type() uint16
+    TypeString() string
     Length() uint16
     Value() []byte
-    // ToJSON() string
 }
 
 type NestedTLV struct {
     tlvType uint16
     Children []TLV
 }
+
+// func (tlv NestedTLV) ToJSON() string {
+//
+// }
+//
+// func (tlv LeafTLV) ToJSON() string {
+//     result, err := json.Marshall(tlv)
+//     if err != nil {
+//         return "<unable to display>"
+//     }
+//     return string(result)
+//
+// }
 
 func (tlv NestedTLV) Type() uint16 {
     return tlv.tlvType
