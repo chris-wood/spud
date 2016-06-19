@@ -2,10 +2,11 @@ package codec
 
 import "encoding/binary"
 
+// TODO: TLV interface -> bytes
 type Encoder struct {
 }
 
-func (e Encoder) Encode(tlv TLV) []byte {
+func (e Encoder) EncodeTLV(tlv TLVInterface) []byte {
     nsType := make([]byte, 2)
     binary.BigEndian.PutUint16(nsType, tlv.Type())
 
@@ -13,6 +14,13 @@ func (e Encoder) Encode(tlv TLV) []byte {
     binary.BigEndian.PutUint16(nsLength, tlv.Length())
 
     tlTuple := append(nsType, nsLength...)
-
     return append(tlTuple, tlv.Value()...)
+}
+
+func (e Encoder) Encode(tlvList []TLVInterface) []byte {
+    encodedBytes := make([]byte, 0)
+    for _, tlv := range(tlvList) {
+        encodedBytes = append(encodedBytes, e.EncodeTLV(tlv)...)
+    }
+    return encodedBytes
 }

@@ -24,7 +24,11 @@ func (e nameError) Error() string {
 func parseNameStringWithoutSchema(nameString string) ([]*name_segment.NameSegment, error) {
     segments := make([]*name_segment.NameSegment, 0)
     for _, segmentString := range(strings.Split(nameString, "/")) {
-        segments = append(segments, name_segment.Parse(segmentString))
+        nextSegment, err := name_segment.Parse(segmentString)
+        if err != nil {
+            return nil, err
+        }
+        segments = append(segments, nextSegment)
     }
     return segments, nil
 }
@@ -50,6 +54,10 @@ func Parse(nameString string) (*Name, error) {
     return &Name{Segments: parsedSegments}, nil
 }
 
+func New(segments []*name_segment.NameSegment) *Name {
+    return &Name{Segments: segments}
+}
+
 // TLV interface functions
 
 func (n Name) Type() uint16 {
@@ -73,7 +81,7 @@ func (n Name) Value() []byte  {
 
     e := codec.Encoder{}
     for _, segment := range(n.Segments) {
-        value = append(value, e.Encode(segment)...)
+        value = append(value, e.EncodeTLV(segment)...)
     }
 
     return value

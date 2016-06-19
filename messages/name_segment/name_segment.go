@@ -1,15 +1,29 @@
 package name_segment
 
+import "fmt"
+
 type NameSegment struct {
     segmentType uint16
     SegmentValue string `json:"segment"`
 }
 
+type nameSegmentError struct {
+    problem string
+}
+
+func (e nameSegmentError) Error() string {
+    return fmt.Sprintf("%s", e.problem)
+}
+
 // Constructor functions
 
-func Parse(segmentString string) *NameSegment {
+func Parse(segmentString string) (*NameSegment, error) {
     // TODO: the type needs to be derived or inferred
-    return &NameSegment{segmentType: 0, SegmentValue: segmentString}
+    return &NameSegment{segmentType: 0, SegmentValue: segmentString}, nil
+}
+
+func New(segmentType uint16, segmentString string) *NameSegment {
+    return &NameSegment{segmentType: segmentType, SegmentValue: segmentString}
 }
 
 // TLV interface functions

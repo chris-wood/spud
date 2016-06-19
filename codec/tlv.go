@@ -1,9 +1,8 @@
 package codec
 
 // import "encoding/binary"
-// import "github.com/chris-wood/spud/codec"
 
-type TLV interface {
+type TLVInterface interface {
     Type() uint16
     TypeString() string
     Length() uint16
@@ -12,22 +11,8 @@ type TLV interface {
 
 type NestedTLV struct {
     tlvType uint16
-    Children []TLV
+    Children []TLVInterface
 }
-
-// func (tlv NestedTLV) ToJSON() string {
-//
-// }
-//
-// func (tlv LeafTLV) ToJSON() string {
-//     result, err := json.Marshall(tlv)
-//     if err != nil {
-//         return "<unable to display>"
-//     }
-//     return string(result)
-//
-// }
-
 func (tlv NestedTLV) Type() uint16 {
     return tlv.tlvType
 }
@@ -41,15 +26,12 @@ func (tlv NestedTLV) Length() uint16 {
 }
 
 func (tlv NestedTLV) Value() []byte {
-    children := make([]byte, 0)
     e := Encoder{}
-    for _, child := range(tlv.Children) {
-        children = append(children, e.Encode(child)...)
-    }
-    return children
+    childrenBytes := e.Encode(tlv.Children)
+    return childrenBytes
 }
 
-func NewNestedTLV(children []TLV) *NestedTLV {
+func NewNestedTLV(children []TLVInterface) *NestedTLV {
     return &NestedTLV{Children: children}
 }
 
