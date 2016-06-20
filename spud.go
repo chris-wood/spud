@@ -21,7 +21,7 @@ func main() {
     nameBytes := e.EncodeTLV(name1);
     fmt.Println(nameBytes)
 
-    d := codec.Decoder{}
-    nameTLV := d.Decode(nameBytes)
-    fmt.Println(decodedName)
+    // d := codec.Decoder{}
+    // nameTLV := d.Decode(nameBytes)
+    // fmt.Println(decodedName)
 }

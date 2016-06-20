@@ -4,7 +4,6 @@ package codec
 
 type TLVInterface interface {
     Type() uint16
-    TypeString() string
     Length() uint16
     Value() []byte
 }
@@ -13,6 +12,7 @@ type NestedTLV struct {
     tlvType uint16
     Children []TLVInterface
 }
+
 func (tlv NestedTLV) Type() uint16 {
     return tlv.tlvType
 }
@@ -52,6 +52,6 @@ func (tlv LeafTLV) Value() []byte {
     return tlv.Payload
 }
 
-func NewLeafTLV(payload []byte) *LeafTLV {
+func NewLeafTLV(tlvType uint16, payload []byte) *LeafTLV {
     return &LeafTLV{Payload: payload}
 }

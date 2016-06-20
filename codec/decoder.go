@@ -1,6 +1,7 @@
 package codec
 
 // import "encoding/binary"
+import "fmt"
 
 type Decoder struct {
 }
@@ -99,10 +100,51 @@ type Decoder struct {
 //     return nil
 // }
 
+type decoderError struct {
+    problem string
+}
+
+func (e decoderError) Error() string {
+    return fmt.Sprintf("%s", e.problem)
+}
+
+func hasInnerTLV(tlvType, tlvLength uint16, bytes []byte) bool {
+    if tlvLength < 4 {
+        return false
+    }
+
+    subLength := readWord(bytes[2:])
+
+    if subLength < tlvLength {
+        return true
+    } else {
+        return false
+    }
+}
+
 func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLVInterface {
-    
-    // TODO; create the TLV tree
-    return nil
+    if hasInnerTLV(tlvType, tlvLength, bytes) {
+        children := make([]TLVInterface, 0)
+        for offset := uint16(4); offset < tlvLength; {
+            innerType := readWord(bytes[offset:])
+            offset += 2
+            innerLength := readWord(bytes[offset:])
+            offset += 2
+
+            if offset + innerLength > tlvLength { // Failure.
+                return NewLeafTLV(tlvType, bytes[0:tlvLength])
+            } else {
+                child := d.decodeTLV(innerType, innerLength, bytes[offset:])
+                children = append(children, child)
+            }
+
+            offset += innerLength
+        }
+
+        return NewNestedTLV(children)
+    } else {
+        return NewLeafTLV(tlvType, bytes[0:tlvLength])
+    }
 }
 
 func readWord(bytes []byte) uint16 {
