@@ -58,6 +58,24 @@ func New(segments []*name_segment.NameSegment) *Name {
     return &Name{Segments: segments}
 }
 
+func CreateFromTLV(tlv []codec.TLVInterface) (*Name, error) {
+    if len(tlv) != 1 {
+        return nil, nil
+    }
+
+    nameTlv := tlv[0]
+    children := make([]*name_segment.NameSegment, 0)
+
+    for _, child := range(nameTlv.Children()) {
+        segment, err := name_segment.CreateFromTLV(child)
+        if err != nil {
+            return nil, nil
+        }
+        children = append(children, segment)
+    }
+    return &Name{Segments: children}, nil
+}
+
 // TLV interface functions
 
 func (n Name) Type() uint16 {
@@ -85,6 +103,14 @@ func (n Name) Value() []byte  {
     }
 
     return value
+}
+
+func (n Name) Children() []codec.TLVInterface {
+    children := make([]codec.TLVInterface, 0)
+    for _, child := range(n.Segments) {
+        children = append(children, *child)
+    }
+    return children
 }
 
 // String functions

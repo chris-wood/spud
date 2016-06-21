@@ -1,6 +1,7 @@
 package name_segment
 
 import "fmt"
+import "github.com/chris-wood/spud/codec"
 
 type NameSegment struct {
     segmentType uint16
@@ -26,6 +27,10 @@ func New(segmentType uint16, segmentString string) *NameSegment {
     return &NameSegment{segmentType: segmentType, SegmentValue: segmentString}
 }
 
+func CreateFromTLV(tlv codec.TLVInterface) (*NameSegment, error) {
+    return &NameSegment{segmentType: 0, SegmentValue: string(tlv.Value())}, nil
+}
+
 // TLV interface functions
 
 func (ns NameSegment) Type() uint16 {
@@ -42,6 +47,10 @@ func (ns NameSegment) Length() uint16 {
 
 func (ns NameSegment) Value() []byte {
     return []byte(ns.SegmentValue)
+}
+
+func (ns NameSegment) Children() []codec.TLVInterface {
+    return nil
 }
 
 // String functions

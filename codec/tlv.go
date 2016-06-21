@@ -6,11 +6,13 @@ type TLVInterface interface {
     Type() uint16
     Length() uint16
     Value() []byte
+    Children() []TLVInterface
+    String() string
 }
 
 type NestedTLV struct {
     tlvType uint16
-    Children []TLVInterface
+    children []TLVInterface
 }
 
 func (tlv NestedTLV) Type() uint16 {
@@ -19,7 +21,7 @@ func (tlv NestedTLV) Type() uint16 {
 
 func (tlv NestedTLV) Length() uint16 {
     tlvLength := uint16(0)
-    for _, child := range(tlv.Children) {
+    for _, child := range(tlv.children) {
         tlvLength += 4 + child.Length()
     }
     return tlvLength
@@ -27,12 +29,24 @@ func (tlv NestedTLV) Length() uint16 {
 
 func (tlv NestedTLV) Value() []byte {
     e := Encoder{}
-    childrenBytes := e.Encode(tlv.Children)
+    childrenBytes := e.Encode(tlv.children)
     return childrenBytes
 }
 
+func (tlv NestedTLV) Children() []TLVInterface {
+    return tlv.children
+}
+
+func (tlv NestedTLV) String() string {
+    result := string(tlv.tlvType)
+    for _, child := range(tlv.children) {
+        result += "\n" + child.String()
+    }
+    return result
+}
+
 func NewNestedTLV(children []TLVInterface) *NestedTLV {
-    return &NestedTLV{Children: children}
+    return &NestedTLV{children: children}
 }
 
 type LeafTLV struct {
@@ -54,4 +68,12 @@ func (tlv LeafTLV) Value() []byte {
 
 func NewLeafTLV(tlvType uint16, payload []byte) *LeafTLV {
     return &LeafTLV{Payload: payload}
+}
+
+func (tlv LeafTLV) Children() []TLVInterface {
+    return nil
+}
+
+func (tlv LeafTLV) String() string {
+    return string(tlv.tlvType) + " - " + string(tlv.Payload)
 }

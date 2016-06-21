@@ -125,7 +125,7 @@ func hasInnerTLV(tlvType, tlvLength uint16, bytes []byte) bool {
 func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLVInterface {
     if hasInnerTLV(tlvType, tlvLength, bytes) {
         children := make([]TLVInterface, 0)
-        for offset := uint16(4); offset < tlvLength; {
+        for offset := uint16(0); offset < tlvLength; {
             innerType := readWord(bytes[offset:])
             offset += 2
             innerLength := readWord(bytes[offset:])
@@ -159,7 +159,7 @@ func (d Decoder) Decode(bytes []byte) []TLVInterface {
         tlvType := readWord(bytes[index:])
         tlvLength := readWord(bytes[index + 2:])
 
-        tlv := d.decodeTLV(tlvType, tlvLength, bytes)
+        tlv := d.decodeTLV(tlvType, tlvLength, bytes[index + 4:])
         tlvs = append(tlvs, tlv)
 
         index += 4 + int(tlvLength)
