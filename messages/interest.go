@@ -9,7 +9,18 @@ type Interest struct {
 
 // Constructors
 
-// TODO
+func CreateWithName(name *name.Name) *Interest {
+    return &Interest{name: name, payload: nil}
+}
+
+func CreateWithNameAndPayload(name, *name.Name, payload []byte) *Interest {
+    return &Interest{name: name, payload: payload}
+}
+
+func CreateFromLink(link *link.Link) *Interest {
+    // return &Interest{name: name, payload: payload}
+    return nil
+}
 
 // TLV functions
 

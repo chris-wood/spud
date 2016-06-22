@@ -2,7 +2,6 @@ package codec
 
 import "encoding/binary"
 
-// TODO: TLV interface -> bytes
 type Encoder struct {
 }
 
