@@ -20,12 +20,13 @@ func (e hashError) Error() string {
 
 // Constructors
 
-func Create(length int, hash hash.Hash) *Hash {
-    bytes := make([]byte, length)
+func Create(hash hash.Hash) *Hash {
+    return &Hash{digest: hash.Sum(nil)}
+}
+
+func CreateTruncated(hash hash.Hash, truncatedLength int) *Hash {
+    bytes := make([]byte, truncatedLength)
     bytes = hash.Sum(bytes)
-
-    // TODO: do some error checking on the length here?
-
     return &Hash{digest: bytes}
 }
 
