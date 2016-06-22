@@ -41,7 +41,7 @@ func (h Hash) TypeString() string {
 }
 
 func (h Hash) Length() uint16 {
-    return len(h.digest)
+    return uint16(len(h.digest))
 }
 
 func (h Hash) Value() []byte  {

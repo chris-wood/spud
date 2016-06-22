@@ -48,3 +48,6 @@ const T_RSA_SHA256 uint16 = 0x0006
 const T_KEYID uint16 = 0x0009
 const T_PUBLICKEY uint16 = 0x000B
 const T_SIGTIME uint16 = 0x000F
+
+// TODO
+const T_HASH uint16 = 0x0001

@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/interest"
 // import "github.com/chris-wood/spud/messages/name_segment"
 import "github.com/chris-wood/spud/codec"
 
@@ -26,4 +27,8 @@ func main() {
     nameTLV := d.Decode(nameBytes)
     decodedName, err := name.CreateFromTLV(nameTLV)
     fmt.Println(decodedName)
+
+    interestMessage := interest.CreateWithName(decodedName)
+    interestBytes := e.EncodeTLV(interestMessage)
+    fmt.Println(interestBytes)
 }
