@@ -27,7 +27,7 @@ func New(segmentType uint16, segmentString string) *NameSegment {
     return &NameSegment{segmentType: segmentType, SegmentValue: segmentString}
 }
 
-func CreateFromTLV(tlv codec.TLVInterface) (*NameSegment, error) {
+func CreateFromTLV(tlv codec.TLV) (*NameSegment, error) {
     return &NameSegment{segmentType: 0, SegmentValue: string(tlv.Value())}, nil
 }
 
@@ -49,7 +49,7 @@ func (ns NameSegment) Value() []byte {
     return []byte(ns.SegmentValue)
 }
 
-func (ns NameSegment) Children() []codec.TLVInterface {
+func (ns NameSegment) Children() []codec.TLV {
     return nil
 }
 

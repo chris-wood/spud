@@ -3,7 +3,6 @@ package main
 import "fmt"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/interest"
-// import "github.com/chris-wood/spud/messages/name_segment"
 import "github.com/chris-wood/spud/codec"
 
 func main() {

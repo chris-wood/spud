@@ -48,7 +48,7 @@ func (h Hash) Value() []byte  {
     return h.digest
 }
 
-func (h Hash) Children() []codec.TLVInterface {
+func (h Hash) Children() []codec.TLV {
     return nil
 }
 

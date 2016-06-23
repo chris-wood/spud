@@ -58,7 +58,7 @@ func New(segments []*name_segment.NameSegment) *Name {
     return &Name{Segments: segments}
 }
 
-func CreateFromTLV(tlv []codec.TLVInterface) (*Name, error) {
+func CreateFromTLV(tlv []codec.TLV) (*Name, error) {
     if len(tlv) != 1 {
         return nil, nil
     }
@@ -105,8 +105,8 @@ func (n Name) Value() []byte  {
     return value
 }
 
-func (n Name) Children() []codec.TLVInterface {
-    children := make([]codec.TLVInterface, 0)
+func (n Name) Children() []codec.TLV {
+    children := make([]codec.TLV, 0)
     for _, child := range(n.Segments) {
         children = append(children, *child)
     }

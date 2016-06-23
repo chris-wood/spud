@@ -1,10 +1,11 @@
-package messages
+package content
 
 import "github.com/chris-wood/spud/messages/name"
-// import "crypto"
 
 type Content struct {
     name *name.Name
+
+    // TODO: this must be a "payload interface"
     payload []byte
 }
 
@@ -17,6 +18,14 @@ func CreateWithPayload(payload []byte) *Content {
 func CreateWithNameAndPayload(name, *name.Name, payload []byte) *Content {
     return &Content{name: name, payload: payload}
 }
+
+// func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
+//     return &Content{name: name, payload: payload}
+// }
+//
+// func CreateWithNameAndKey(name, *name.Name, payload []byte) *Content {
+//     return &Content{name: name, payload: payload}
+// }
 
 // TLV functions
 

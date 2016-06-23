@@ -40,31 +40,6 @@ func (l Link) ContentID()  *hash.Hash {
     return l.contentId
 }
 
-// // TLV functions
-//
-// func (l Link) Type() uint16 {
-//     return uint16(codec.T_LINK)
-// }
-//
-// func (l Link) TypeString() string {
-//     return "Link"
-// }
-//
-// func (l Link) Length() uint16 {
-//     return len(l.Value())
-// }
-//
-// func (l Link) Value() []byte  {
-//     bytes := l.linkName.Value()
-//     bytes = append(bytes, l.keyId.Value())
-//     bytes = append(bytes, l.contentId.Value())
-//     return bytes
-// }
-//
-// func (l Link) Children() []codec.TLVInterface {
-//     return [l.linkName, l.keyId, l.contentId]
-// }
-
 // String functions
 
 func (l Link) String() string {

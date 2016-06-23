@@ -67,8 +67,8 @@ func (i Interest) Value() []byte  {
     return value
 }
 
-func (i Interest) Children() []codec.TLVInterface  {
-    children := []codec.TLVInterface{i.name, i.keyId, i.contentId}
+func (i Interest) Children() []codec.TLV  {
+    children := []codec.TLV{i.name, i.keyId, i.contentId}
 
     return children
 }

@@ -5,7 +5,7 @@ import "encoding/binary"
 type Encoder struct {
 }
 
-func (e Encoder) EncodeTLV(tlv TLVInterface) []byte {
+func (e Encoder) EncodeTLV(tlv TLV) []byte {
     nsType := make([]byte, 2)
     binary.BigEndian.PutUint16(nsType, tlv.Type())
 
@@ -16,7 +16,7 @@ func (e Encoder) EncodeTLV(tlv TLVInterface) []byte {
     return append(tlTuple, tlv.Value()...)
 }
 
-func (e Encoder) Encode(tlvList []TLVInterface) []byte {
+func (e Encoder) Encode(tlvList []TLV) []byte {
     encodedBytes := make([]byte, 0)
     for _, tlv := range(tlvList) {
         encodedBytes = append(encodedBytes, e.EncodeTLV(tlv)...)

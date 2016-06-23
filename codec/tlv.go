@@ -1,19 +1,19 @@
 package codec
 
-// import "encoding/binary"
 import "encoding/json"
 
-type TLVInterface interface {
+type TLV interface {
     Type() uint16
     Length() uint16
     Value() []byte
-    Children() []TLVInterface
+
+    Children() []TLV
     String() string
 }
 
 type NestedTLV struct {
     tlvType uint16 `json:"type"`
-    children []TLVInterface `json:"children"`
+    children []TLV `json:"children"`
 }
 
 func (tlv NestedTLV) Type() uint16 {
@@ -34,19 +34,19 @@ func (tlv NestedTLV) Value() []byte {
     return childrenBytes
 }
 
-func (tlv NestedTLV) Children() []TLVInterface {
+func (tlv NestedTLV) Children() []TLV {
     return tlv.children
 }
 
 func (tlv NestedTLV) String() string {
     result, err := json.Marshal(tlv)
-    if err != nil {
+    if err == nil {
         return string(result)
     }
     return err.Error()
 }
 
-func NewNestedTLV(children []TLVInterface) *NestedTLV {
+func NewNestedTLV(children []TLV) *NestedTLV {
     return &NestedTLV{children: children}
 }
 
@@ -71,13 +71,13 @@ func NewLeafTLV(tlvType uint16, payload []byte) *LeafTLV {
     return &LeafTLV{Payload: payload}
 }
 
-func (tlv LeafTLV) Children() []TLVInterface {
+func (tlv LeafTLV) Children() []TLV {
     return nil
 }
 
 func (tlv LeafTLV) String() string {
     result, err := json.Marshal(tlv)
-    if err != nil {
+    if err == nil {
         return string(result)
     }
     return err.Error()
