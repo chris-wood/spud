@@ -46,8 +46,8 @@ func (tlv NestedTLV) String() string {
     return err.Error()
 }
 
-func NewNestedTLV(children []TLV) *NestedTLV {
-    return &NestedTLV{children: children}
+func NewNestedTLV(children []TLV) NestedTLV {
+    return NestedTLV{children: children}
 }
 
 type LeafTLV struct {
@@ -67,8 +67,8 @@ func (tlv LeafTLV) Value() []byte {
     return tlv.Payload
 }
 
-func NewLeafTLV(tlvType uint16, payload []byte) *LeafTLV {
-    return &LeafTLV{Payload: payload}
+func NewLeafTLV(tlvType uint16, payload []byte) LeafTLV {
+    return LeafTLV{Payload: payload}
 }
 
 func (tlv LeafTLV) Children() []TLV {

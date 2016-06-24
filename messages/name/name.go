@@ -8,7 +8,7 @@ import "fmt"
 // import "encoding/json"
 
 type Name struct {
-    Segments []*name_segment.NameSegment `json:"segments"`
+    Segments []name_segment.NameSegment `json:"segments"`
 }
 
 type nameError struct {
@@ -21,8 +21,8 @@ func (e nameError) Error() string {
 
 // Name parsing functions
 
-func parseNameStringWithoutSchema(nameString string) ([]*name_segment.NameSegment, error) {
-    segments := make([]*name_segment.NameSegment, 0)
+func parseNameStringWithoutSchema(nameString string) ([]name_segment.NameSegment, error) {
+    segments := make([]name_segment.NameSegment, 0)
     for _, segmentString := range(strings.Split(nameString, "/")) {
         nextSegment, err := name_segment.Parse(segmentString)
         if err != nil {
@@ -33,7 +33,7 @@ func parseNameStringWithoutSchema(nameString string) ([]*name_segment.NameSegmen
     return segments, nil
 }
 
-func parseNameString(nameString string) ([]*name_segment.NameSegment, error) {
+func parseNameString(nameString string) ([]name_segment.NameSegment, error) {
     if index := strings.Index(nameString, "ccnx:/"); index == 0 {
         return parseNameStringWithoutSchema(nameString[6:])
     } else if index := strings.Index(nameString, "/"); index == 0 {
@@ -45,35 +45,37 @@ func parseNameString(nameString string) ([]*name_segment.NameSegment, error) {
 
 // Constructor functions
 
-func Parse(nameString string) (*Name, error) {
+func Parse(nameString string) (Name, error) {
+    var result Name
     parsedSegments, err := parseNameString(nameString)
     if (err != nil) {
         // TODO: what to return here?
-        return nil, nameError{"rawr"}
+        return result, nameError{"rawr"}
     }
-    return &Name{Segments: parsedSegments}, nil
+    return Name{Segments: parsedSegments}, nil
 }
 
-func New(segments []*name_segment.NameSegment) *Name {
-    return &Name{Segments: segments}
+func New(segments []name_segment.NameSegment) Name {
+    return Name{Segments: segments}
 }
 
-func CreateFromTLV(tlv []codec.TLV) (*Name, error) {
+func CreateFromTLV(tlv []codec.TLV) (Name, error) {
+    var result Name
     if len(tlv) != 1 {
-        return nil, nil
+        return result, nil
     }
 
     nameTlv := tlv[0]
-    children := make([]*name_segment.NameSegment, 0)
+    children := make([]name_segment.NameSegment, 0)
 
     for _, child := range(nameTlv.Children()) {
         segment, err := name_segment.CreateFromTLV(child)
         if err != nil {
-            return nil, nil
+            return result, nil
         }
         children = append(children, segment)
     }
-    return &Name{Segments: children}, nil
+    return Name{Segments: children}, nil
 }
 
 // TLV interface functions
@@ -108,7 +110,7 @@ func (n Name) Value() []byte  {
 func (n Name) Children() []codec.TLV {
     children := make([]codec.TLV, 0)
     for _, child := range(n.Segments) {
-        children = append(children, *child)
+        children = append(children, child)
     }
     return children
 }

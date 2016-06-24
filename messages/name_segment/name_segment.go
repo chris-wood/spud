@@ -18,17 +18,17 @@ func (e nameSegmentError) Error() string {
 
 // Constructor functions
 
-func Parse(segmentString string) (*NameSegment, error) {
+func Parse(segmentString string) (NameSegment, error) {
     // TODO: the type needs to be derived or inferred
-    return &NameSegment{segmentType: 0, SegmentValue: segmentString}, nil
+    return NameSegment{segmentType: 0, SegmentValue: segmentString}, nil
 }
 
-func New(segmentType uint16, segmentString string) *NameSegment {
-    return &NameSegment{segmentType: segmentType, SegmentValue: segmentString}
+func New(segmentType uint16, segmentString string) NameSegment {
+    return NameSegment{segmentType: segmentType, SegmentValue: segmentString}
 }
 
-func CreateFromTLV(tlv codec.TLV) (*NameSegment, error) {
-    return &NameSegment{segmentType: 0, SegmentValue: string(tlv.Value())}, nil
+func CreateFromTLV(tlv codec.TLV) (NameSegment, error) {
+    return NameSegment{segmentType: 0, SegmentValue: string(tlv.Value())}, nil
 }
 
 // TLV interface functions

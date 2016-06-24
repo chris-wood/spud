@@ -18,8 +18,8 @@ func (e payloadError) Error() string {
 
 // Constructors
 
-func Create(bytes []byte) *Payload {
-    return &Payload{payloadType, bytes}
+func Create(bytes []byte) Payload {
+    return Payload{payloadType, bytes}
 }
 
 // TLV functions

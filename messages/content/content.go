@@ -3,20 +3,22 @@ package content
 import "github.com/chris-wood/spud/messages/name"
 
 type Content struct {
-    name *name.Name
+    name name.Name
 
     // TODO: this must be a "payload interface"
     payload []byte
+
+    // TODO: include the validation stuff
 }
 
 // Constructors
 
-func CreateWithPayload(payload []byte) *Content {
-    return &Content{name: nil, payload: payload}
+func CreateWithPayload(payload []byte) Content {
+    return Content{name: nil, payload: payload}
 }
 
-func CreateWithNameAndPayload(name, *name.Name, payload []byte) *Content {
-    return &Content{name: name, payload: payload}
+func CreateWithNameAndPayload(name, *name.Name, payload []byte) Content {
+    return Content{name: name, payload: payload}
 }
 
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {

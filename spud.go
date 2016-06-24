@@ -4,6 +4,7 @@ import "fmt"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/stack"
 
 func main() {
     // ns1 := name_segment.Parse("foo")
@@ -30,4 +31,6 @@ func main() {
     interestMessage := interest.CreateWithName(decodedName)
     interestBytes := e.EncodeTLV(interestMessage)
     fmt.Println(interestBytes)
+
+    stack.Create("")
 }

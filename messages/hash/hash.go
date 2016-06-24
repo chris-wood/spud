@@ -20,14 +20,14 @@ func (e hashError) Error() string {
 
 // Constructors
 
-func Create(hash hash.Hash) *Hash {
-    return &Hash{digest: hash.Sum(nil)}
+func Create(hash hash.Hash) Hash {
+    return Hash{digest: hash.Sum(nil)}
 }
 
-func CreateTruncated(hash hash.Hash, truncatedLength int) *Hash {
+func CreateTruncated(hash hash.Hash, truncatedLength int) Hash {
     bytes := make([]byte, truncatedLength)
     bytes = hash.Sum(bytes)
-    return &Hash{digest: bytes}
+    return Hash{digest: bytes}
 }
 
 // TLV functions
