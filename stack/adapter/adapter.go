@@ -10,7 +10,7 @@ type NameAPI struct {
 }
 
 type RequestCallback func(string) []byte
-type ResponseCallback func(string) []byte
+type ResponseCallback func([]byte)
 
 func NewNameAPI(s stack.Stack) NameAPI {
     api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback)}
@@ -23,7 +23,6 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
     if err == nil {
         request := interest.CreateWithName(requestName)
         n.apiStack.Enqueue(request)
-        
     }
 }
 

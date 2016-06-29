@@ -1,6 +1,7 @@
 package connector
 
 import "net"
+import "fmt"
 
 // The generic forwarder connector interface
 // A forwarder connector is used to read raw packets from and write raw packets
@@ -33,6 +34,7 @@ func (fc LoopbackForwarderConnector) Read() []byte {
 }
 
 func (fc LoopbackForwarderConnector) Write(bytes []byte) {
+    fmt.Println("Looping: " + string(bytes))
     fc.buffer <- bytes
 }
 

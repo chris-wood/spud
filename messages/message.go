@@ -8,12 +8,11 @@ type Message interface {
     ComputeMessageHash() []byte
     Encode() []byte
 
-    // XX: this should take a signer as input
+    // XXX: this should take a signer as input
     // TagAndEncode() []byte
 }
 
-// TODO: create the right type of message here...
-// CreateFromTLV(tlv codec.TLV) (Message, error)
+// XXX: create the right type of message here
 func CreateFromTLV(tlv []codec.TLV) (Message, error) {
     var result Message
 

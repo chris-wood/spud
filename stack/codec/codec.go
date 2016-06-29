@@ -1,5 +1,6 @@
 package codec
 
+import "fmt"
 import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/codec"
@@ -56,6 +57,7 @@ func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) []
 func (c Codec) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress
+        fmt.Println("codec processing " + msg.Identifier())
 
         // 1. Encode the message
         messageBytes := msg.Encode()
@@ -77,6 +79,7 @@ func (c Codec) ProcessIngressMessages() {
     decoder := codec.Decoder{}
     for ;; {
         msgBytes := c.connector.Read()
+        fmt.Println("reading: " + string(msgBytes))
 
         // 1. Extract the message bytes (strip headers)
         // packetLength := readWord(msgBytes[2:4])
@@ -85,6 +88,8 @@ func (c Codec) ProcessIngressMessages() {
         // 2. Decode the message
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
         message, err := messages.CreateFromTLV(decodedTlV)
+
+        // 3. Enqueue in the upstream (ingress) queue
         if err == nil {
             c.ingress <- message
         }
@@ -92,6 +97,7 @@ func (c Codec) ProcessIngressMessages() {
 }
 
 func (c Codec) Enqueue(msg messages.Message) {
+    fmt.Println("enqueueing...")
     c.egress <- msg
 }
 

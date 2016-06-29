@@ -114,6 +114,19 @@ func (i Interest) String() string  {
 
 // Message functions
 
+func (i Interest) Identifier() string {
+    encoder := codec.Encoder{}
+    value := encoder.EncodeTLV(i.name)
+    if i.keyId.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(i.keyId)...)
+    }
+    if i.contentId.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(i.contentId)...)
+    }
+
+    return string(value)
+}
+
 func (i Interest) ComputeMessageHash() []byte {
     return make([]byte, 0)
 }
