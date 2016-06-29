@@ -4,6 +4,7 @@ import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
+import "fmt"
 
 type Interest struct {
     name name.Name
@@ -13,6 +14,14 @@ type Interest struct {
     payload []byte // TODO: make a payload TLV wrapper
 
     // TODO: include the validation fields
+}
+
+type interestError struct {
+    prob string
+}
+
+func (e interestError) Error() string {
+    return fmt.Sprintf("%s", e.prob)
 }
 
 // Constructors
@@ -28,6 +37,28 @@ func CreateWithName(name name.Name) Interest {
 func CreateFromLink(link link.Link) Interest {
     return Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
 }
+
+// func (i Interest) CreateFromTLV(tlv []codec.TLV) (Interest, error) {
+//     // var result Name
+//     // if len(tlv) != 1 {
+//     //     return result, nil
+//     // }
+//     //
+//     // nameTlv := tlv[0]
+//     // children := make([]name_segment.NameSegment, 0)
+//     //
+//     // for _, child := range(nameTlv.Children()) {
+//     //     segment, err := name_segment.CreateFromTLV(child)
+//     //     if err != nil {
+//     //         return result, nil
+//     //     }
+//     //     children = append(children, segment)
+//     // }
+//     // return Name{Segments: children}, nil
+//
+//     var result Interest
+//     return result, interestError{"couldn't parse the interest TLV"}
+// }
 
 // TLV functions
 

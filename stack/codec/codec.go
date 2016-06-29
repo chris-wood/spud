@@ -84,8 +84,18 @@ func (c Codec) ProcessIngressMessages() {
 
         // 2. Decode the message
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
-        message := messages.CreateFromTLV(decodedTlV)
-
-        c.ingress <- message
+        message, err := messages.CreateFromTLV(decodedTlV)
+        if err == nil {
+            c.ingress <- message
+        }
     }
+}
+
+func (c Codec) Enqueue(msg messages.Message) {
+    c.egress <- msg
+}
+
+func (c Codec) Dequeue() messages.Message {
+    msg := <-c.ingress
+    return msg
 }

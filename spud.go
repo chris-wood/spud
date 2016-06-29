@@ -5,6 +5,7 @@ import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/stack"
+import "github.com/chris-wood/spud/stack/adapter"
 
 func main() {
     // ns1 := name_segment.Parse("foo")
@@ -32,5 +33,8 @@ func main() {
     interestBytes := e.EncodeTLV(interestMessage)
     fmt.Println(interestBytes)
 
-    stack.Create("")
+    myStack := stack.Create("")
+    api := adapter.NewNameAPI(myStack)
+    api.Get("ccnx:/hello/spud")
+
 }

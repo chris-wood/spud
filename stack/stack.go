@@ -5,15 +5,24 @@ import "github.com/chris-wood/spud/stack/connector"
 import "github.com/chris-wood/spud/stack/codec"
 
 type Component interface {
-    UpstreamQueue() chan *messages.Message
-    DownstreamQueue() chan *messages.Message
+    Enqueue(messages.Message)
+    Dequeue() messages.Message
+    ProcessEgressMessages()
+    ProcessIngressMessages()
 }
 
 type Stack struct {
     components []Component
-
     stackCodec codec.Codec
     forwarderConnector connector.ForwarderConnector
+}
+
+func (s Stack) Enqueue(msg messages.Message) {
+    s.components[0].Enqueue(msg)
+}
+
+func (s Stack) Dequeue() messages.Message {
+    return s.components[0].Dequeue()
 }
 
 /*
@@ -22,16 +31,18 @@ type Stack struct {
     "keystore": "<path to key store>"
 }
 */
-func Create(config string) *Stack {
+func Create(config string) Stack {
     // 1. create connector
     fc, _ := connector.NewLoopbackForwarderConnector()
 
     // 2. create codec
     stackCodec := codec.NewCodec(fc)
+    go stackCodec.ProcessEgressMessages()
+    go stackCodec.ProcessIngressMessages()
 
     // 3. create other components
     // authenticator := crypto.XXXX
 
     // 4. assemble the stack
-    return &Stack{components: nil, stackCodec: stackCodec, forwarderConnector: fc}
+    return Stack{components: []Component{stackCodec}, stackCodec: stackCodec, forwarderConnector: fc}
 }

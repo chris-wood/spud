@@ -3,8 +3,7 @@ package messages
 import "github.com/chris-wood/spud/codec"
 
 type Message interface {
-    CreateFromTLV(tlv codec.TLV) *Message
-
+    Identifier() string
     HashSensitiveRegion() []byte
     ComputeMessageHash() []byte
     Encode() []byte
@@ -13,8 +12,10 @@ type Message interface {
     // TagAndEncode() []byte
 }
 
-func CreateFromTLV(tlv []codec.TLV) Message {
+// TODO: create the right type of message here...
+// CreateFromTLV(tlv codec.TLV) (Message, error)
+func CreateFromTLV(tlv []codec.TLV) (Message, error) {
     var result Message
 
-    return result
+    return result, nil
 }
