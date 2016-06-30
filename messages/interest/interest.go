@@ -38,27 +38,27 @@ func CreateFromLink(link link.Link) Interest {
     return Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
 }
 
-// func (i Interest) CreateFromTLV(tlv []codec.TLV) (Interest, error) {
-//     // var result Name
-//     // if len(tlv) != 1 {
-//     //     return result, nil
-//     // }
-//     //
-//     // nameTlv := tlv[0]
-//     // children := make([]name_segment.NameSegment, 0)
-//     //
-//     // for _, child := range(nameTlv.Children()) {
-//     //     segment, err := name_segment.CreateFromTLV(child)
-//     //     if err != nil {
-//     //         return result, nil
-//     //     }
-//     //     children = append(children, segment)
-//     // }
-//     // return Name{Segments: children}, nil
-//
-//     var result Interest
-//     return result, interestError{"couldn't parse the interest TLV"}
-// }
+func CreateFromTLV(tlv []codec.TLV) (Interest, error) {
+    // var result Name
+    // if len(tlv) != 1 {
+    //     return result, nil
+    // }
+    //
+    // nameTlv := tlv[0]
+    // children := make([]name_segment.NameSegment, 0)
+    //
+    // for _, child := range(nameTlv.Children()) {
+    //     segment, err := name_segment.CreateFromTLV(child)
+    //     if err != nil {
+    //         return result, nil
+    //     }
+    //     children = append(children, segment)
+    // }
+    // return Name{Segments: children}, nil
+
+    var result Interest
+    return result, interestError{"couldn't parse the interest TLV"}
+}
 
 // TLV functions
 

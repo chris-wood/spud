@@ -85,12 +85,17 @@ func (c Codec) ProcessIngressMessages() {
         // packetLength := readWord(msgBytes[2:4])
         headerLength := msgBytes[7]
 
+        fmt.Println(msgBytes)
+        fmt.Println(msgBytes[headerLength:])
+
         // 2. Decode the message
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
+        fmt.Println(decodedTlV[0])
         message, err := messages.CreateFromTLV(decodedTlV)
 
         // 3. Enqueue in the upstream (ingress) queue
         if err == nil {
+            fmt.Println("forwarding " + message.Identifier())
             c.ingress <- message
         }
     }
@@ -103,5 +108,6 @@ func (c Codec) Enqueue(msg messages.Message) {
 
 func (c Codec) Dequeue() messages.Message {
     msg := <-c.ingress
+    fmt.Println("dequeue " + msg.Identifier())
     return msg
 }

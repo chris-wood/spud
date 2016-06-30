@@ -46,7 +46,8 @@ func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLV {
             offset += innerLength
         }
 
-        return NewNestedTLV(children)
+        tlv := NewNestedTLV(tlvType, children)
+        return tlv
     } else {
         return NewLeafTLV(tlvType, bytes[0:tlvLength])
     }

@@ -1,5 +1,6 @@
 package adapter
 
+import "fmt"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/interest"
@@ -28,7 +29,8 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
 
 func (n NameAPI) process() {
     for ;; {
-        // msg := n.apiStack.Dequeue()
+        msg := n.apiStack.Dequeue()
+        fmt.Println(msg.Identifier())
         // extract the name from the message hand it to the callback
         // enqueue the message to the stack
     }
