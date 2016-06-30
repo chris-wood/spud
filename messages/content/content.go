@@ -32,7 +32,7 @@ func CreateWithNameAndPayload(name name.Name, payload []byte) Content {
     return Content{name: name, payload: payload}
 }
 
-func CreateFromTLV(tlv []codec.TLV) (Content, error) {
+func CreateFromTLV(tlv codec.TLV) (Content, error) {
     var result Content
     return result, contentError{"couldn't parse the content TLV"}
 }

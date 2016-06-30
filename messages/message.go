@@ -31,10 +31,10 @@ func CreateFromTLV(tlv []codec.TLV) (Message, error) {
     root := tlv[0]
     switch (root.Type()) {
     case codec.T_INTEREST:
-        result, err = interest.CreateFromTLV(tlv)
+        result, err = interest.CreateFromTLV(root)
         break
     case codec.T_OBJECT:
-        result, err = content.CreateFromTLV(tlv)
+        result, err = content.CreateFromTLV(root)
         break
     default:
         fmt.Println("invalid type " + string(root.Type()))
@@ -42,6 +42,10 @@ func CreateFromTLV(tlv []codec.TLV) (Message, error) {
         return result, messageError{"Unable to create a message from the top-level TLV type " + string(root.Type())}
     }
 
-    fmt.Println("tried and failed to create a message from a TLV")
+    if err != nil {
+        fmt.Println("tried and failed to create a message from a TLV")
+    } else {
+        fmt.Print(result.Identifier())
+    }
     return result, err
 }

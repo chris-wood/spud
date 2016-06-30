@@ -38,26 +38,28 @@ func CreateFromLink(link link.Link) Interest {
     return Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
 }
 
-func CreateFromTLV(tlv []codec.TLV) (Interest, error) {
-    // var result Name
-    // if len(tlv) != 1 {
-    //     return result, nil
-    // }
-    //
-    // nameTlv := tlv[0]
-    // children := make([]name_segment.NameSegment, 0)
-    //
-    // for _, child := range(nameTlv.Children()) {
-    //     segment, err := name_segment.CreateFromTLV(child)
-    //     if err != nil {
-    //         return result, nil
-    //     }
-    //     children = append(children, segment)
-    // }
-    // return Name{Segments: children}, nil
+func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
+    var interest Interest
+    var interestName name.Name
+    var err error
 
-    var result Interest
-    return result, interestError{"couldn't parse the interest TLV"}
+    for _, tlv := range(tlvs.Children()) {
+        if tlv.Type() == codec.T_NAME {
+            fmt.Println("parsing the interest name")
+            interestName, err = name.CreateFromTLV(tlv)
+            if err != nil {
+                return interest, interestError{"Unable to parse the Interest name"}
+            }
+        } else if tlv.Type() == codec.T_KEYID_REST {
+            // pass
+        } else if tlv.Type() == codec.T_HASH_REST {
+            // pass
+        } else {
+            fmt.Printf("Unable to parse interest TLV type: %d\n", tlv.Type())
+        }
+    }
+
+    return Interest{name: interestName}, nil
 }
 
 // TLV functions

@@ -59,17 +59,15 @@ func New(segments []name_segment.NameSegment) Name {
     return Name{Segments: segments}
 }
 
-func CreateFromTLV(tlv []codec.TLV) (Name, error) {
+func CreateFromTLV(nameTlv codec.TLV) (Name, error) {
     var result Name
-    if len(tlv) != 1 {
-        return result, nil
-    }
 
-    nameTlv := tlv[0]
     children := make([]name_segment.NameSegment, 0)
 
+    fmt.Println(len(nameTlv.Children()))
     for _, child := range(nameTlv.Children()) {
         segment, err := name_segment.CreateFromTLV(child)
+        fmt.Println(segment.String())
         if err != nil {
             return result, nil
         }

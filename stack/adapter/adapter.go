@@ -30,7 +30,8 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
 func (n NameAPI) process() {
     for ;; {
         msg := n.apiStack.Dequeue()
-        fmt.Println(msg.Identifier())
+        fmt.Println("poppoed " + msg.Identifier() + " from stack")
+        
         // extract the name from the message hand it to the callback
         // enqueue the message to the stack
     }

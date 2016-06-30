@@ -28,7 +28,7 @@ func simpleTest() {
     d := codec.Decoder{}
 
     nameTLV := d.Decode(nameBytes)
-    decodedName, err := name.CreateFromTLV(nameTLV)
+    decodedName, err := name.CreateFromTLV(nameTLV[0])
     fmt.Println(decodedName)
 
     interestMessage := interest.CreateWithName(decodedName)
