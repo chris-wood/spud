@@ -57,7 +57,7 @@ func (c Content) TypeString() string {
 func (c Content) Length() uint16 {
     length := uint16(0)
 
-    if c.name.Length() == 0 {
+    if c.name.Length() > 0 {
         length += c.name.Length() + 4
     }
 
@@ -72,7 +72,7 @@ func (c Content) Value() []byte {
     e := codec.Encoder{}
     value := make([]byte, 0)
 
-    if c.name.Length() == 0 {
+    if c.name.Length() > 0 {
         value = append(value, e.EncodeTLV(c.name)...)
     }
 

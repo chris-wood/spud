@@ -20,7 +20,7 @@ func (e nameSegmentError) Error() string {
 
 func Parse(segmentString string) (NameSegment, error) {
     // TODO: the type needs to be derived or inferred
-    return NameSegment{segmentType: 0, SegmentValue: segmentString}, nil
+    return NameSegment{segmentType: 1, SegmentValue: segmentString}, nil
 }
 
 func New(segmentType uint16, segmentString string) NameSegment {
@@ -28,7 +28,7 @@ func New(segmentType uint16, segmentString string) NameSegment {
 }
 
 func CreateFromTLV(tlv codec.TLV) (NameSegment, error) {
-    return NameSegment{segmentType: 0, SegmentValue: string(tlv.Value())}, nil
+    return NameSegment{segmentType: tlv.Type(), SegmentValue: string(tlv.Value())}, nil
 }
 
 // TLV interface functions
