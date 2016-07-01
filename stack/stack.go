@@ -1,6 +1,5 @@
 package stack
 
-import "fmt"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/stack/connector"
 import "github.com/chris-wood/spud/stack/codec"
@@ -19,7 +18,6 @@ type Stack struct {
 }
 
 func (s Stack) Enqueue(msg messages.Message) {
-    fmt.Println("Enqueueing: " + msg.Identifier())
     s.components[0].Enqueue(msg)
 }
 

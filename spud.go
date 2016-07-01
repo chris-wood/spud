@@ -36,6 +36,25 @@ func simpleTest() {
     fmt.Println(interestBytes)
 }
 
+func contentTest() {
+    name1, err := name.Parse("ccnx:/hello/spud")
+    if err != nil {
+        fmt.Println(err)
+    }
+
+    bytes := make([]byte, 32)
+    rand.Read(bytes)
+    dataPayload := payload.Create(bytes)
+
+    contentMsg := content.CreateWithNameAndPayload(name1, dataPayload)
+    fmt.Println("Content: " + contentMsg.Identifier())
+
+    e := codec.Encoder{}
+    contentBytes := e.EncodeTLV(contentMsg);
+
+    fmt.Println(contentBytes)
+}
+
 func displayResponse(response []byte) {
     fmt.Println("Response: " + string(response))
 }
@@ -62,20 +81,5 @@ func testStack() {
 }
 
 func main() {
-    name1, err := name.Parse("ccnx:/hello/spud")
-    if err != nil {
-        fmt.Println(err)
-    }
-
-    bytes := make([]byte, 32)
-    rand.Read(bytes)
-    dataPayload := payload.Create(bytes)
-
-    contentMsg := content.CreateWithNameAndPayload(name1, dataPayload)
-    fmt.Println("Content: " + contentMsg.Identifier())
-
-    e := codec.Encoder{}
-    contentBytes := e.EncodeTLV(contentMsg);
-
-    fmt.Println(contentBytes)
+    testStack()
 }

@@ -52,7 +52,8 @@ func CreateFromTLV(tlv []codec.TLV) (Message, error) {
     if err != nil {
         fmt.Println("tried and failed to create a message from a TLV")
     } else {
-        fmt.Print(result.Identifier())
+        fmt.Println("Reconstructed message: " + result.Identifier())
     }
+
     return result, err
 }

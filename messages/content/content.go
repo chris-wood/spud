@@ -4,6 +4,7 @@ import "fmt"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
+import "encoding/hex"
 
 type Content struct {
     name name.Name
@@ -31,9 +32,27 @@ func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) Conte
     return Content{name: name, dataPayload: dataPayload}
 }
 
-func CreateFromTLV(tlv codec.TLV) (Content, error) {
+func CreateFromTLV(topLevelTLV codec.TLV) (Content, error) {
     var result Content
-    return result, contentError{"couldn't parse the content TLV"}
+    var contentName name.Name
+    var dataPayload payload.Payload
+    var err error
+
+    for _, tlv := range(topLevelTLV.Children()) {
+        fmt.Printf("%d %d %s\n", tlv.Type(), tlv.Length(), hex.EncodeToString(tlv.Value()))
+        if tlv.Type() == codec.T_NAME {
+            contentName, err = name.CreateFromTLV(tlv)
+            if err != nil {
+                return result, contentError{"Unable to parse the content name"}
+            }
+        } else if tlv.Type() == codec.T_PAYLOAD {
+            dataPayload = payload.Create(tlv.Value())
+        } else {
+            fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
+        }
+    }
+
+    return Content{name: contentName, dataPayload: dataPayload}, nil
 }
 
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {

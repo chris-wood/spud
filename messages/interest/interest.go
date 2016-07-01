@@ -45,10 +45,9 @@ func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
 
     for _, tlv := range(tlvs.Children()) {
         if tlv.Type() == codec.T_NAME {
-            fmt.Println("parsing the interest name")
             interestName, err = name.CreateFromTLV(tlv)
             if err != nil {
-                return interest, interestError{"Unable to parse the Interest name"}
+                return interest, interestError{"Unable to parse the interest name"}
             }
         } else if tlv.Type() == codec.T_KEYID_REST {
             // pass
@@ -121,16 +120,7 @@ func (i Interest) Name() name.Name {
 }
 
 func (i Interest) Identifier() string {
-    encoder := codec.Encoder{}
-    value := encoder.EncodeTLV(i.name)
-    if i.keyId.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.keyId)...)
-    }
-    if i.contentId.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.contentId)...)
-    }
-
-    return string(value)
+    return i.name.String()
 }
 
 func (i Interest) ComputeMessageHash() []byte {
