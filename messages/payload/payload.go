@@ -1,6 +1,6 @@
 package payload
 
-// import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/codec"
 import "fmt"
 // import "encoding/json"
 
@@ -19,7 +19,7 @@ func (e payloadError) Error() string {
 // Constructors
 
 func Create(bytes []byte) Payload {
-    return Payload{payloadType, bytes}
+    return Payload{bytes}
 }
 
 // TLV functions
@@ -33,7 +33,7 @@ func (p Payload) TypeString() string {
 }
 
 func (p Payload) Length() uint16 {
-    return len(bytes)
+    return uint16(len(p.bytes))
 }
 
 func (p Payload) Value() []byte  {

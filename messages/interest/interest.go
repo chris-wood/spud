@@ -4,14 +4,14 @@ import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
+import "github.com/chris-wood/spud/messages/payload"
 import "fmt"
 
 type Interest struct {
     name name.Name
     keyId hash.Hash
     contentId hash.Hash
-
-    payload []byte // TODO: make a payload TLV wrapper
+    dataPayload payload.Payload
 
     // TODO: include the validation fields
 }
@@ -81,8 +81,8 @@ func (i Interest) Length() uint16 {
     if i.contentId.Length() > 0 {
         length += i.contentId.Length() + 4
     }
-    if len(i.payload) > 0 {
-        length += uint16(len(i.payload)) + 4
+    if i.dataPayload.Length() > 0 {
+        length += i.dataPayload.Length() + 4
     }
 
     return length
@@ -98,8 +98,8 @@ func (i Interest) Value() []byte  {
     if i.contentId.Length() > 0 {
         value = append(value, e.EncodeTLV(i.contentId)...)
     }
-    if len(i.payload) > 0 {
-        value = append(value, i.payload...)
+    if i.dataPayload.Length() > 0 {
+        value = append(value, e.EncodeTLV(i.dataPayload)...)
     }
 
     return value
@@ -115,6 +115,10 @@ func (i Interest) String() string  {
 }
 
 // Message functions
+
+func (i Interest) Name() name.Name {
+    return i.name
+}
 
 func (i Interest) Identifier() string {
     encoder := codec.Encoder{}
@@ -149,9 +153,17 @@ func (i Interest) HashSensitiveRegion() []byte {
     if i.contentId.Length() > 0 {
         value = append(value, encoder.EncodeTLV(i.contentId)...)
     }
-    if len(i.payload) > 0 {
-        value = append(value, i.payload...)
+    if i.dataPayload.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(i.dataPayload)...)
     }
 
     return value
+}
+
+func (i Interest) IsRequest() bool {
+    return true
+}
+
+func (i Interest) Payload() payload.Payload {
+    return i.dataPayload
 }

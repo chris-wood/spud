@@ -2,6 +2,8 @@ package messages
 
 import "fmt"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/content"
 import "github.com/chris-wood/spud/messages/interest"
 
@@ -14,10 +16,15 @@ func (e messageError) Error() string {
 }
 
 type Message interface {
+    Name() name.Name
     Identifier() string
     HashSensitiveRegion() []byte
     ComputeMessageHash() []byte
     Encode() []byte
+    Payload() payload.Payload
+
+    // XXX: should this be `get message type`?
+    IsRequest() bool
 
     // XXX: this should take a signer as input
     // TagAndEncode() []byte

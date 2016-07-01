@@ -34,7 +34,9 @@ func (fc LoopbackForwarderConnector) Read() []byte {
 }
 
 func (fc LoopbackForwarderConnector) Write(bytes []byte) {
-    fmt.Println("Looping: " + string(bytes))
+    fmt.Print("Looping wire format: ")
+    fmt.Print(bytes)
+    fmt.Println()
     fc.buffer <- bytes
 }
 

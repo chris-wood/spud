@@ -113,6 +113,21 @@ func (n Name) Children() []codec.TLV {
     return children
 }
 
+// API
+
+func (n Name) Prefix(num int) string {
+    if num >= len(n.Segments) {
+        num = len(n.Segments)
+    }
+
+    prefix := "/"
+    for i := 0; i < num; i++ {
+        prefix += n.Segments[i].String() + "/"
+    }
+
+    return prefix
+}
+
 // String functions
 
 func (n Name) String() string {

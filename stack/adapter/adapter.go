@@ -1,16 +1,19 @@
 package adapter
 
-import "fmt"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
+import "github.com/chris-wood/spud/messages/content"
 
 type NameAPI struct {
     apiStack stack.Stack
+
     prefixMap map[string]RequestCallback
+    pendingMap map[string]ResponseCallback
 }
 
-type RequestCallback func(string) []byte
+type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
 
 func NewNameAPI(s stack.Stack) NameAPI {
@@ -30,8 +33,30 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
 func (n NameAPI) process() {
     for ;; {
         msg := n.apiStack.Dequeue()
-        fmt.Println("poppoed " + msg.Identifier() + " from stack")
-        
+
+        if msg.IsRequest() {
+            // XXX: this needs to use LPM to identify the service prefix
+            requestName := msg.Name()
+            numSsegments := len(requestName.Segments)
+            for index := 1; index <= numSsegments; index++ {
+                prefix := requestName.Prefix(index)
+                callback, ok := n.prefixMap[prefix]
+                if ok {
+                    go func() {
+                        // XXX: this needs to be the full name string, not the prefix
+                        data := callback(prefix, msg.Payload().Value())
+                        dataPayload := payload.Create(data)
+                        response := content.CreateWithNameAndPayload(requestName, dataPayload)
+                        n.apiStack.Enqueue(response)
+                    }()
+                    break
+                }
+            }
+        } else {
+            callback := n.pendingMap[msg.Identifier()]
+            callback(msg.Payload().Value())
+        }
+
         // extract the name from the message hand it to the callback
         // enqueue the message to the stack
     }
@@ -39,4 +64,5 @@ func (n NameAPI) process() {
 
 func (n NameAPI) Serve(prefix string, callback RequestCallback) {
     // XX store the prefix, callback tuple in the map
+    n.prefixMap[prefix] = callback
 }
