@@ -2,6 +2,7 @@ package messages
 
 import "fmt"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/content"
@@ -22,6 +23,8 @@ type Message interface {
     ComputeMessageHash() []byte
     Encode() []byte
     Payload() payload.Payload
+
+    SetValidationAlgorithm(va validation.ValidationAlgorithm)
 
     // XXX: should this be `get message type`?
     IsRequest() bool

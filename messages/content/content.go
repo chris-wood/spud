@@ -2,6 +2,7 @@ package content
 
 import "fmt"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
 
@@ -9,7 +10,9 @@ type Content struct {
     name name.Name
     dataPayload payload.Payload
 
-    // TODO: include the validation stuff
+    // Validation information
+    validationAlgorithm validation.ValidationAlgorithm
+    validationPayload validation.ValidationPayload
 }
 
 type contentError struct {
@@ -144,4 +147,8 @@ func (c Content) IsRequest() bool {
 
 func (c Content) Payload() payload.Payload {
     return c.dataPayload
+}
+
+func (c Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
+    c.validationAlgorithm = va
 }

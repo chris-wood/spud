@@ -6,11 +6,11 @@ type ValidationPayload struct {
     // TODO
 }
 
-type validationAlgorithmError struct {
+type validationPayloadError struct {
     problem string
 }
 
-func (e validationAlgorithmError) Error() string {
+func (e validationPayloadError) Error() string {
     return fmt.Sprintf("%s", e.problem)
 }
 

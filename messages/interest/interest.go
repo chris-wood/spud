@@ -5,6 +5,7 @@ import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/payload"
+import "github.com/chris-wood/spud/messages/validation"
 import "fmt"
 
 type Interest struct {
@@ -13,7 +14,9 @@ type Interest struct {
     contentId hash.Hash
     dataPayload payload.Payload
 
-    // TODO: include the validation fields
+    // Validation information
+    validationAlgorithm validation.ValidationAlgorithm
+    validationPayload validation.ValidationPayload
 }
 
 type interestError struct {
@@ -47,7 +50,7 @@ func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
         if tlv.Type() == codec.T_NAME {
             interestName, err = name.CreateFromTLV(tlv)
             if err != nil {
-                return interest, interestError{"Unable to parse the interest name"}
+                return interest, err
             }
         } else if tlv.Type() == codec.T_KEYID_REST {
             // pass
@@ -156,4 +159,8 @@ func (i Interest) IsRequest() bool {
 
 func (i Interest) Payload() payload.Payload {
     return i.dataPayload
+}
+
+func (i Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
+    i.validationAlgorithm = va
 }
