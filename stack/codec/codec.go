@@ -10,18 +10,18 @@ const PKT_CONTENT uint8 = 0x01
 const DEFAULT_HOP_LIMIT uint8 = 0xFF
 const CODEC_SCHEMA_VERSION uint8 = 0x01
 
-type Codec struct {
+type CodecComponent struct {
     ingress chan messages.Message
     egress chan messages.Message
 
     connector connector.ForwarderConnector
 }
 
-func NewCodec(conn connector.ForwarderConnector) Codec {
+func NewCodecComponent(conn connector.ForwarderConnector) CodecComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
-    return Codec{ingress: ingress, egress: egress, connector: conn}
+    return CodecComponent{ingress: ingress, egress: egress, connector: conn}
 }
 
 func readWord(bytes []byte) uint16 {
@@ -53,7 +53,7 @@ func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) []
     return wireFormat
 }
 
-func (c Codec) ProcessEgressMessages() {
+func (c CodecComponent) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress
 
@@ -73,7 +73,7 @@ func (c Codec) ProcessEgressMessages() {
     }
 }
 
-func (c Codec) ProcessIngressMessages() {
+func (c CodecComponent) ProcessIngressMessages() {
     decoder := codec.Decoder{}
     for ;; {
         msgBytes := c.connector.Read()
@@ -93,11 +93,11 @@ func (c Codec) ProcessIngressMessages() {
     }
 }
 
-func (c Codec) Enqueue(msg messages.Message) {
+func (c CodecComponent) Enqueue(msg messages.Message) {
     c.egress <- msg
 }
 
-func (c Codec) Dequeue() messages.Message {
+func (c CodecComponent) Dequeue() messages.Message {
     msg := <-c.ingress
     return msg
 }

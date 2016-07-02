@@ -4,7 +4,6 @@ import "fmt"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
-import "encoding/hex"
 
 type Content struct {
     name name.Name
@@ -39,7 +38,6 @@ func CreateFromTLV(topLevelTLV codec.TLV) (Content, error) {
     var err error
 
     for _, tlv := range(topLevelTLV.Children()) {
-        fmt.Printf("%d %d %s\n", tlv.Type(), tlv.Length(), hex.EncodeToString(tlv.Value()))
         if tlv.Type() == codec.T_NAME {
             contentName, err = name.CreateFromTLV(tlv)
             if err != nil {

@@ -60,9 +60,7 @@ func displayResponse(response []byte) {
 }
 
 func generateResponse(name string, response []byte) []byte {
-    b := make([]byte, 32)
-    rand.Read(b)
-    return b
+    return []byte("hi there, buddy!")
 }
 
 func testStack() {

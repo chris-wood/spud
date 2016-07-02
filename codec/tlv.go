@@ -56,11 +56,11 @@ type LeafTLV struct {
 }
 
 func (tlv LeafTLV) Type() uint16 {
-    return uint16(len(tlv.Payload) + 4)
+    return tlv.tlvType
 }
 
 func (tlv LeafTLV) Length() uint16 {
-    return tlv.tlvType
+    return uint16(len(tlv.Payload))
 }
 
 func (tlv LeafTLV) Value() []byte {
@@ -68,7 +68,7 @@ func (tlv LeafTLV) Value() []byte {
 }
 
 func NewLeafTLV(tlvType uint16, payload []byte) LeafTLV {
-    return LeafTLV{Payload: payload}
+    return LeafTLV{tlvType: tlvType, Payload: payload}
 }
 
 func (tlv LeafTLV) Children() []TLV {

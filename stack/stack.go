@@ -13,7 +13,7 @@ type Component interface {
 
 type Stack struct {
     components []Component
-    stackCodec codec.Codec
+    stackCodec codec.CodecComponent
     forwarderConnector connector.ForwarderConnector
 }
 
@@ -36,7 +36,7 @@ func Create(config string) Stack {
     fc, _ := connector.NewLoopbackForwarderConnector()
 
     // 2. create codec
-    stackCodec := codec.NewCodec(fc)
+    stackCodec := codec.NewCodecComponent(fc)
     go stackCodec.ProcessEgressMessages()
     go stackCodec.ProcessIngressMessages()
 

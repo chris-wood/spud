@@ -17,7 +17,7 @@ type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
 
 func NewNameAPI(s stack.Stack) NameAPI {
-    api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback)}
+    api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback), pendingMap: make(map[string]ResponseCallback)}
     go api.process()
     return api
 }
@@ -26,6 +26,7 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
     requestName, err := name.Parse(nameString)
     if err == nil {
         request := interest.CreateWithName(requestName)
+        n.pendingMap[request.Identifier()] = callback
         n.apiStack.Enqueue(request)
     }
 }
@@ -53,8 +54,11 @@ func (n NameAPI) process() {
                 }
             }
         } else {
-            callback := n.pendingMap[msg.Identifier()]
-            callback(msg.Payload().Value())
+            callback, ok := n.pendingMap[msg.Identifier()]
+            if ok {
+                pay := msg.Payload()
+                callback(pay.Value())
+            }
         }
 
         // extract the name from the message hand it to the callback
