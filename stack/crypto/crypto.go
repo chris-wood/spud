@@ -22,13 +22,15 @@ type CryptoProcessor interface {
     Verify(msg *messages.Message) bool
 }
 
-type XXXProcessor struct {
-    // XX key store
+type RSAProcessor struct {
+    
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress
+
+        // 0. Look up the processor based on the message, and then extract its validation algorithm
 
         // 1. Add the key locator information
         // XXX
