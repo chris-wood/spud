@@ -3,6 +3,8 @@ package stack
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/stack/connector"
 import "github.com/chris-wood/spud/stack/codec"
+import "github.com/chris-wood/spud/stack/crypto"
+import "github.com/chris-wood/spud/stack/crypto/processor"
 
 type Component interface {
     Enqueue(messages.Message)
@@ -13,7 +15,7 @@ type Component interface {
 
 type Stack struct {
     components []Component
-    stackCodec codec.CodecComponent
+    codecComponent codec.CodecComponent
     forwarderConnector connector.ForwarderConnector
 }
 
@@ -36,13 +38,18 @@ func Create(config string) Stack {
     fc, _ := connector.NewLoopbackForwarderConnector()
 
     // 2. create codec
-    stackCodec := codec.NewCodecComponent(fc)
-    go stackCodec.ProcessEgressMessages()
-    go stackCodec.ProcessIngressMessages()
+    codecComponent := codec.NewCodecComponent(fc)
+    go codecComponent.ProcessEgressMessages()
+    go codecComponent.ProcessIngressMessages()
 
-    // 3. create other components
-    // authenticator := crypto.XXXX
+    // 3. create crypto component
+    // XXX: the processor information would be pulled from the configuration file
+    // XXX: check crypto processor errors here
+    rsaProcessor, _ := processor.NewRSAProcessor(2048)
+    cryptoComponent := crypto.NewCryptoComponent(rsaProcessor, codecComponent)
+    go cryptoComponent.ProcessEgressMessages()
+    go cryptoComponent.ProcessIngressMessages()
 
     // 4. assemble the stack
-    return Stack{components: []Component{stackCodec}, stackCodec: stackCodec, forwarderConnector: fc}
+    return Stack{components: []Component{cryptoComponent, codecComponent}, codecComponent: codecComponent, forwarderConnector: fc}
 }

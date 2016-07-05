@@ -1,17 +1,18 @@
 package interest
 
+import "fmt"
+import "hash"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
-import "github.com/chris-wood/spud/messages/hash"
+import typedhash "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/validation"
-import "fmt"
 
 type Interest struct {
     name name.Name
-    keyId hash.Hash
-    contentId hash.Hash
+    keyId typedhash.Hash
+    contentId typedhash.Hash
     dataPayload payload.Payload
 
     // Validation information
@@ -126,7 +127,7 @@ func (i Interest) Identifier() string {
     return i.name.String()
 }
 
-func (i Interest) ComputeMessageHash() []byte {
+func (i Interest) ComputeMessageHash(hasher hash.Hash) []byte {
     return make([]byte, 0)
 }
 
@@ -136,7 +137,7 @@ func (i Interest) Encode() []byte {
     return bytes
 }
 
-func (i Interest) HashSensitiveRegion() []byte {
+func (i Interest) HashSensitiveRegion(hasher hash.Hash) []byte {
     encoder := codec.Encoder{}
 
     value := encoder.EncodeTLV(i.name)

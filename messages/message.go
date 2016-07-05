@@ -1,6 +1,7 @@
 package messages
 
 import "fmt"
+import "hash"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/name"
@@ -19,8 +20,8 @@ func (e messageError) Error() string {
 type Message interface {
     Name() name.Name
     Identifier() string
-    HashSensitiveRegion() []byte
-    ComputeMessageHash() []byte
+    HashSensitiveRegion(hasher hash.Hash) []byte
+    ComputeMessageHash(hasher hash.Hash) []byte
     Encode() []byte
     Payload() payload.Payload
 

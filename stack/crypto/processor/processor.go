@@ -1,19 +1,19 @@
 package processor
 
 import "github.com/chris-wood/spud/messages"
-import "crypto"
 import "crypto/rand"
 import "crypto/rsa"
 import "crypto/sha256"
+import "crypto"
 
 type CryptoProcessor interface {
-    Sign(msg messages.Message) []byte
-    Verify(msg messages.Message) bool
+    Sign(msg messages.Message) ([]byte, error)
+    Verify(msg messages.Message, signature []byte) bool
 }
 
 type RSAProcessor struct {
     privateKey *rsa.PrivateKey
-    publicKey *rsa.PublicKey
+    publicKey rsa.PublicKey
 }
 
 type processorError struct {
@@ -21,7 +21,7 @@ type processorError struct {
 }
 
 func (p processorError) Error() string {
-    return problem
+    return p.problem
 }
 
 func NewRSAProcessor(keySize int) (RSAProcessor, error) {
@@ -38,14 +38,17 @@ func NewRSAProcessor(keySize int) (RSAProcessor, error) {
 
     publicKey := privateKey.PublicKey
 
-    return RSAProcessor{privateKey: privateKey, publicKey: publicKey}
+    return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
-func (p RSAProcessor) Sign(msg messages.Message) []byte {
-    digest := msg.HashSensitiveRegion()
-
+func (p RSAProcessor) Sign(msg messages.Message) ([]byte, error) {
+    digest := msg.HashSensitiveRegion(sha256.New())
+    signature, err := rsa.SignPKCS1v15(rand.Reader, p.privateKey, crypto.SHA256, digest)
+    return signature, err
 }
 
-func (p RSAProcessor) Verify(msg messages.Message) bool {
-
+func (p RSAProcessor) Verify(msg messages.Message, signature []byte) bool {
+    digest := msg.HashSensitiveRegion(sha256.New())
+    err := rsa.VerifyPKCS1v15(&p.publicKey, crypto.SHA256, digest, signature)
+    return err != nil
 }

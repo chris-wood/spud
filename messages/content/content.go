@@ -1,6 +1,8 @@
 package content
 
 import "fmt"
+import "hash"
+import "crypto/sha256"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/payload"
@@ -114,7 +116,7 @@ func (c Content) String() string {
 
 // Message functions
 
-func (c Content) ComputeMessageHash() []byte {
+func (c Content) ComputeMessageHash(hasher hash.Hash) []byte {
     return make([]byte, 1)
 }
 
@@ -132,12 +134,12 @@ func (c Content) Identifier() string {
     if c.name.Length() > 0 {
         return c.name.String()
     } else {
-        hash := c.ComputeMessageHash()
+        hash := c.ComputeMessageHash(sha256.New())
         return string(hash)
     }
 }
 
-func (c Content) HashSensitiveRegion() []byte {
+func (c Content) HashSensitiveRegion(hasher hash.Hash) []byte {
     // XXX
     return nil
 }

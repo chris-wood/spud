@@ -1,25 +1,29 @@
 package crypto
 
+import "fmt"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/stack/codec"
+import "github.com/chris-wood/spud/stack/crypto/processor"
 
 type CryptoComponent struct {
     ingress chan messages.Message
     egress chan messages.Message
 
+    cryptoProcessor processor.CryptoProcessor
     codecComponent codec.CodecComponent
 }
 
-func NewCryptoComponent(codecComponent codec.CodecComponent) CryptoComponent {
+func NewCryptoComponent(cryptoProcessor processor.CryptoProcessor, codecComponent codec.CodecComponent) CryptoComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
-    return CryptoComponent{ingress: ingress, egress: egress, codecComponent: codecComponent}
+    return CryptoComponent{ingress: ingress, egress: egress, cryptoProcessor: cryptoProcessor, codecComponent: codecComponent}
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress
+        fmt.Println("Passing down: " + msg.Identifier())
 
         // 0. Look up the processor based on the message, and then extract its validation algorithm
 
@@ -43,6 +47,8 @@ func (c CryptoComponent) ProcessIngressMessages() {
     for ;; {
         msg := c.codecComponent.Dequeue()
 
+        fmt.Println("Passing up: " + msg.Identifier())
+
         // 1. Hash the sensitive region
         // XXX
 
@@ -50,7 +56,7 @@ func (c CryptoComponent) ProcessIngressMessages() {
         // XXX
 
         // 3. If valid, enqueue upstream
-        c.ingress <- message
+        c.ingress <- msg
 
         // 4. Else, request whatever is needed to verify the signature and keep going
     }
