@@ -17,15 +17,6 @@ func NewCryptoComponent(codecComponent codec.CodecComponent) CryptoComponent {
     return CryptoComponent{ingress: ingress, egress: egress, codecComponent: codecComponent}
 }
 
-type CryptoProcessor interface {
-    Sign(msg *messages.Message) []byte
-    Verify(msg *messages.Message) bool
-}
-
-type RSAProcessor struct {
-    
-}
-
 func (c CryptoComponent) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress

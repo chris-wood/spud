@@ -138,6 +138,7 @@ func (c Content) Identifier() string {
 }
 
 func (c Content) HashSensitiveRegion() []byte {
+    // XXX
     return nil
 }
 
