@@ -4,7 +4,6 @@ import "github.com/chris-wood/spud/codec"
 import "fmt"
 
 type PublicKey struct {
-    keyType uint16
     bytes []byte
 }
 
@@ -18,18 +17,18 @@ func (e keyError) Error() string {
 
 // Constructors
 
-func Create(keyType uint16, bytes []byte) PublicKey {
-    return PublicKey{keyType: keyType, bytes: bytes}
+func Create(bytes []byte) PublicKey {
+    return PublicKey{bytes: bytes}
 }
 
 func CreateFromTLV(tlv codec.TLV) (PublicKey, error) {
-    return PublicKey{keyType: tlv.Type(), bytes: tlv.Value()}, nil
+    return PublicKey{bytes: tlv.Value()}, nil
 }
 
 // TLV functions
 
 func (pk PublicKey) Type() uint16 {
-    return pk.keyType
+    return codec.T_PUBLICKEY
 }
 
 func (pk PublicKey) TypeString() string {

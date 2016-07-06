@@ -1,14 +1,19 @@
 package processor
 
+import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
+import "github.com/chris-wood/spud/messages/validation"
+import "github.com/chris-wood/spud/messages/validation/publickey"
 import "crypto/rand"
 import "crypto/rsa"
 import "crypto/sha256"
+import "crypto/x509"
 import "crypto"
 
 type CryptoProcessor interface {
     Sign(msg messages.Message) ([]byte, error)
     Verify(msg messages.Message, signature []byte) bool
+    ProcessorDetails() validation.ValidationAlgorithm
 }
 
 type RSAProcessor struct {
@@ -51,4 +56,16 @@ func (p RSAProcessor) Verify(msg messages.Message, signature []byte) bool {
     digest := msg.HashSensitiveRegion(sha256.New())
     err := rsa.VerifyPKCS1v15(&p.publicKey, crypto.SHA256, digest, signature)
     return err != nil
+}
+
+func (p RSAProcessor) ProcessorDetails() validation.ValidationAlgorithm {
+    var result validation.ValidationAlgorithm
+    publicKeyBytes, err := x509.MarshalPKIXPublicKey(p.publicKey)
+    if err != nil {
+        return result
+    }
+
+    publicKey := publickey.Create(publicKeyBytes)
+    va := validation.NewValidationAlgorithmFromPublickey(codec.T_RSA_SHA256, publicKey, 0)
+    return va
 }

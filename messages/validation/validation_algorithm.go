@@ -12,6 +12,7 @@ type ValidationAlgorithm struct {
     publicKey publickey.PublicKey
     signatureTime uint64
 
+    // XXX: write TLV wrappers for these fields
     keyId []byte
     certificate []byte
     keyName link.Link

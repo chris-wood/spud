@@ -26,6 +26,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
         fmt.Println("Passing down: " + msg.Identifier())
 
         // 0. Look up the processor based on the message, and then extract its validation algorithm
+        // XXX
 
         // 1. Add the key locator information
         // XXX
