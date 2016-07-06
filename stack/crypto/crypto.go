@@ -2,6 +2,7 @@ package crypto
 
 import "fmt"
 import "github.com/chris-wood/spud/messages"
+import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/stack/codec"
 import "github.com/chris-wood/spud/stack/crypto/processor"
 
@@ -25,20 +26,21 @@ func (c CryptoComponent) ProcessEgressMessages() {
         msg := <- c.egress
         fmt.Println("Passing down: " + msg.Identifier())
 
-        // 0. Look up the processor based on the message, and then extract its validation algorithm
-        // XXX
+        // 0. Look up the processor based on the message and then extract its validation algorithm
+        // XXX: apply the LPM filter for the right processor here
+        va := c.cryptoProcessor.ProcessorDetails()
 
-        // 1. Add the key locator information
-        // XXX
+        // 1. Add the validation algorithm information
+        msg.SetValidationAlgorithm(va)
 
-        // 2. Hash the sensitive region
-        // XXX
+        // 2. Compute the signature
+        signature, err := c.cryptoProcessor.Sign(msg)
 
-        // 3. Compute the signature
-        // XXX
-
-        // 4. Append the signature
-        // XXX
+        // 3. Append the signature
+        if err != nil {
+            vp := validation.NewValidationPayload(signature)
+            msg.SetValidationPayload(vp)
+        }
 
         c.codecComponent.Enqueue(msg)
     }

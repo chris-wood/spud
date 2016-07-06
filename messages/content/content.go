@@ -155,3 +155,7 @@ func (c Content) Payload() payload.Payload {
 func (c Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
     c.validationAlgorithm = va
 }
+
+func (c Content) SetValidationPayload(vp validation.ValidationPayload) {
+    c.validationPayload = vp
+}

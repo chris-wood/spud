@@ -165,3 +165,7 @@ func (i Interest) Payload() payload.Payload {
 func (i Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
     i.validationAlgorithm = va
 }
+
+func (i Interest) SetValidationPayload(vp validation.ValidationPayload) {
+    i.validationPayload = vp
+}

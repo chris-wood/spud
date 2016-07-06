@@ -26,6 +26,7 @@ type Message interface {
     Payload() payload.Payload
 
     SetValidationAlgorithm(va validation.ValidationAlgorithm)
+    SetValidationPayload(va validation.ValidationPayload)
 
     // XXX: should this be `get message type`?
     IsRequest() bool

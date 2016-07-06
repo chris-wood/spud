@@ -9,11 +9,13 @@ import "crypto/rsa"
 import "crypto/sha256"
 import "crypto/x509"
 import "crypto"
+import "hash"
 
 type CryptoProcessor interface {
     Sign(msg messages.Message) ([]byte, error)
     Verify(msg messages.Message, signature []byte) bool
     ProcessorDetails() validation.ValidationAlgorithm
+    Hasher() hash.Hash
 }
 
 type RSAProcessor struct {
@@ -68,4 +70,8 @@ func (p RSAProcessor) ProcessorDetails() validation.ValidationAlgorithm {
     publicKey := publickey.Create(publicKeyBytes)
     va := validation.NewValidationAlgorithmFromPublickey(codec.T_RSA_SHA256, publicKey, 0)
     return va
+}
+
+func (p RSAProcessor) Hasher() hash.Hash {
+    return sha256.New()
 }

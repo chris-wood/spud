@@ -9,7 +9,7 @@ const T_MSG_HASH uint16 = 0x0003
 const T_INTEREST uint16 = 0x0001
 const T_OBJECT uint16 = 0x0002
 const T_VALALG uint16 = 0x0003
-const T_VALSIG uint16 = 0x0004
+const T_VALPAYLOAD uint16 = 0x0004
 const T_MANIFEST uint16 = 0x0006
 
 // Message body

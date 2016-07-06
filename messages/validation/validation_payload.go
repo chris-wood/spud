@@ -1,9 +1,10 @@
 package validation
 
 import "fmt"
+import "github.com/chris-wood/spud/codec"
 
 type ValidationPayload struct {
-    // TODO
+    bytes []byte
 }
 
 type validationPayloadError struct {
@@ -16,12 +17,14 @@ func (e validationPayloadError) Error() string {
 
 // Constructor functions
 
-// TODO
+func NewValidationPayload(bytes []byte) ValidationPayload {
+    return ValidationPayload{}
+}
 
 // TLV interface functions
 
 func (va ValidationPayload) Type() uint16 {
-    return 0
+    return codec.T_VALPAYLOAD
 }
 
 func (va ValidationPayload) TypeString() string {
@@ -29,11 +32,11 @@ func (va ValidationPayload) TypeString() string {
 }
 
 func (va ValidationPayload) Length() uint16 {
-    return 0
+    return uint16(len(va.bytes))
 }
 
 func (va ValidationPayload) Value() []byte {
-    return make([]byte, 0)
+    return va.bytes
 }
 
 // String functions
