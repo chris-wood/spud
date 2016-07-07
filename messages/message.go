@@ -17,6 +17,7 @@ func (e messageError) Error() string {
     return fmt.Sprintf("%s", e.prob)
 }
 
+// XXX: keep this clean
 type Message interface {
     Name() name.Name
     Identifier() string
@@ -28,11 +29,11 @@ type Message interface {
     SetValidationAlgorithm(va validation.ValidationAlgorithm)
     SetValidationPayload(va validation.ValidationPayload)
 
+    GetValidationAlgorithm() validation.ValidationAlgorithm
+    GetValidationPayload() validation.ValidationPayload
+
     // XXX: should this be `get message type`?
     IsRequest() bool
-
-    // XXX: this should take a signer as input
-    // TagAndEncode() []byte
 }
 
 // XXX: create the right type of message here

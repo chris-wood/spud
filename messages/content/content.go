@@ -140,8 +140,21 @@ func (c Content) Identifier() string {
 }
 
 func (c Content) HashSensitiveRegion(hasher hash.Hash) []byte {
-    // XXX
-    return nil
+    encoder := codec.Encoder{}
+
+    value := make([]byte, 0)
+    if c.name.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(c.name)...)
+    }
+    if c.dataPayload.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(c.dataPayload)...)
+    }
+    if c.validationAlgorithm.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(c.validationAlgorithm)...)
+    }
+
+    hasher.Write(value)
+    return hasher.Sum(nil)
 }
 
 func (c Content) IsRequest() bool {
@@ -158,4 +171,12 @@ func (c Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
 
 func (c Content) SetValidationPayload(vp validation.ValidationPayload) {
     c.validationPayload = vp
+}
+
+func (c Content) GetValidationAlgorithm() validation.ValidationAlgorithm {
+    return c.validationAlgorithm
+}
+
+func (c Content) GetValidationPayload() validation.ValidationPayload {
+    return c.validationPayload
 }

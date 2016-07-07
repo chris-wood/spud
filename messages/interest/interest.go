@@ -150,6 +150,9 @@ func (i Interest) HashSensitiveRegion(hasher hash.Hash) []byte {
     if i.dataPayload.Length() > 0 {
         value = append(value, encoder.EncodeTLV(i.dataPayload)...)
     }
+    if i.validationAlgorithm.Length() > 0 {
+        value = append(value, encoder.EncodeTLV(i.validationAlgorithm)...)
+    }
 
     hasher.Write(value)
     return hasher.Sum(nil)
@@ -169,4 +172,12 @@ func (i Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
 
 func (i Interest) SetValidationPayload(vp validation.ValidationPayload) {
     i.validationPayload = vp
+}
+
+func (i Interest) GetValidationAlgorithm() validation.ValidationAlgorithm {
+    return i.validationAlgorithm
+}
+
+func (i Interest) GetValidationPayload() validation.ValidationPayload {
+    return i.validationPayload
 }

@@ -35,8 +35,12 @@ func addAuthenticator(msg messages.Message, proc processor.CryptoProcessor) (mes
     return msg, err
 }
 
+// XXX: this does not look at the request, yet
 func verifyAuthenticator(request, response messages.Message, crypto processor.CryptoProcessor) (bool, error) {
-    return false, nil
+    validationPayload := response.GetValidationPayload()
+    signature := validationPayload.Value()
+    valid := crypto.Verify(response, signature)
+    return valid, nil
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
@@ -66,12 +70,12 @@ func (c CryptoComponent) ProcessIngressMessages() {
         msg := c.codecComponent.Dequeue()
         fmt.Println("Passing up: " + msg.Identifier())
 
-        // XXX: fix this logic
+        // XXX: clean up this logic
         if !msg.IsRequest() {
             request, ok := c.pendingMap[msg.Identifier()]
             if ok {
                 success, err := verifyAuthenticator(request, msg, c.cryptoProcessor)
-                if err != nil {
+                if err == nil {
                     if success {
                         fmt.Println("valid!")
                     }
