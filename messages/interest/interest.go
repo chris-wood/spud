@@ -151,7 +151,8 @@ func (i Interest) HashSensitiveRegion(hasher hash.Hash) []byte {
         value = append(value, encoder.EncodeTLV(i.dataPayload)...)
     }
 
-    return value
+    hasher.Write(value)
+    return hasher.Sum(nil)
 }
 
 func (i Interest) IsRequest() bool {
