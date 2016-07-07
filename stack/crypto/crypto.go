@@ -10,6 +10,8 @@ type CryptoComponent struct {
     ingress chan messages.Message
     egress chan messages.Message
 
+    pendingMap map[string]messages.Message
+
     cryptoProcessor processor.CryptoProcessor
     codecComponent codec.CodecComponent
 }
@@ -18,7 +20,23 @@ func NewCryptoComponent(cryptoProcessor processor.CryptoProcessor, codecComponen
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
-    return CryptoComponent{ingress: ingress, egress: egress, cryptoProcessor: cryptoProcessor, codecComponent: codecComponent}
+    return CryptoComponent{ingress: ingress, egress: egress, cryptoProcessor: cryptoProcessor, codecComponent: codecComponent, pendingMap: make(map[string]messages.Message)}
+}
+
+func addAuthenticator(msg messages.Message, proc processor.CryptoProcessor) (messages.Message, error) {
+    va := proc.ProcessorDetails()
+    msg.SetValidationAlgorithm(va)
+    signature, err := proc.Sign(msg)
+    if err != nil {
+        vp := validation.NewValidationPayload(signature)
+        msg.SetValidationPayload(vp)
+    }
+
+    return msg, err
+}
+
+func verifyAuthenticator(request, response messages.Message, crypto processor.CryptoProcessor) (bool, error) {
+    return false, nil
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
@@ -26,20 +44,14 @@ func (c CryptoComponent) ProcessEgressMessages() {
         msg := <- c.egress
         fmt.Println("Passing down: " + msg.Identifier())
 
-        // 0. Look up the processor based on the message and then extract its validation algorithm
+        // Look up the processor based on the message
         // XXX: apply the LPM filter for the right processor here
-        va := c.cryptoProcessor.ProcessorDetails()
-
-        // 1. Add the validation algorithm information
-        msg.SetValidationAlgorithm(va)
-
-        // 2. Compute the signature
-        signature, err := c.cryptoProcessor.Sign(msg)
-
-        // 3. Append the signature
+        msg, err := addAuthenticator(msg, c.cryptoProcessor)
         if err != nil {
-            vp := validation.NewValidationPayload(signature)
-            msg.SetValidationPayload(vp)
+            fmt.Println(err.Error())
+        }
+        if msg.IsRequest() {
+            c.pendingMap[msg.Identifier()] = msg
         }
 
         c.codecComponent.Enqueue(msg)
@@ -49,14 +61,22 @@ func (c CryptoComponent) ProcessEgressMessages() {
 func (c CryptoComponent) ProcessIngressMessages() {
     for ;; {
         msg := c.codecComponent.Dequeue()
-
         fmt.Println("Passing up: " + msg.Identifier())
 
-        // 1. Hash the sensitive region
-        // XXX
-
-        // 2. Verify the signature
-        // XXX
+        // XXX: fix this logic
+        if !msg.IsRequest() {
+            request, ok := c.pendingMap[msg.Identifier()]
+            if ok {
+                success, err := verifyAuthenticator(request, msg, c.cryptoProcessor)
+                if err != nil {
+                    if success {
+                        fmt.Println("valid!")
+                    }
+                }
+            } else {
+                fmt.Println("Drop the message: " + msg.Identifier())
+            }
+        }
 
         // 3. If valid, enqueue upstream
         c.ingress <- msg
