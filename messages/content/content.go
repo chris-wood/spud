@@ -87,6 +87,15 @@ func (c Content) Length() uint16 {
         length += c.dataPayload.Length() + 4
     }
 
+    if c.validationAlgorithm.Length() > 0 {
+        length += c.validationAlgorithm.Length() + 4
+    }
+
+    if c.validationPayload.Length() > 0 {
+        length += c.validationPayload.Length() + 4
+    }
+
+
     return length
 }
 
@@ -102,11 +111,19 @@ func (c Content) Value() []byte {
         value = append(value, e.EncodeTLV(c.dataPayload)...)
     }
 
+    if c.validationAlgorithm.Length() > 0 {
+        value = append(value, e.EncodeTLV(c.validationAlgorithm)...)
+    }
+
+    if c.validationPayload.Length() > 0 {
+        value = append(value, e.EncodeTLV(c.validationPayload)...)
+    }
+
     return value
 }
 
 func (c Content) Children() []codec.TLV {
-    children := []codec.TLV{c.name, c.dataPayload}
+    children := []codec.TLV{c.name, c.dataPayload, c.validationAlgorithm, c.validationPayload}
     return children
 }
 
@@ -117,7 +134,10 @@ func (c Content) String() string {
 // Message functions
 
 func (c Content) ComputeMessageHash(hasher hash.Hash) []byte {
-    return make([]byte, 1)
+    encoder := codec.Encoder{}
+    bytes := encoder.EncodeTLV(c)
+    hasher.Write(bytes)
+    return hasher.Sum(nil)
 }
 
 func (c Content) Encode() []byte {

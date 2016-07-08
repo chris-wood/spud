@@ -23,24 +23,28 @@ func NewValidationPayload(bytes []byte) ValidationPayload {
 
 // TLV interface functions
 
-func (va ValidationPayload) Type() uint16 {
+func (vp ValidationPayload) Type() uint16 {
     return codec.T_VALPAYLOAD
 }
 
-func (va ValidationPayload) TypeString() string {
+func (vp ValidationPayload) TypeString() string {
     return "ValidationPayload"
 }
 
-func (va ValidationPayload) Length() uint16 {
-    return uint16(len(va.bytes))
+func (vp ValidationPayload) Length() uint16 {
+    return uint16(len(vp.bytes))
 }
 
-func (va ValidationPayload) Value() []byte {
-    return va.bytes
+func (vp ValidationPayload) Value() []byte {
+    return vp.bytes
+}
+
+func (vp ValidationPayload) Children() []codec.TLV {
+    return nil
 }
 
 // String functions
 
-func (va ValidationPayload) String() string {
+func (vp ValidationPayload) String() string {
     return ""
 }
