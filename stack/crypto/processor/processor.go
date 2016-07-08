@@ -13,7 +13,7 @@ import "hash"
 
 type CryptoProcessor interface {
     Sign(msg messages.Message) ([]byte, error)
-    Verify(msg messages.Message, signature []byte) bool
+    Verify(request, response messages.Message) bool
     ProcessorDetails() validation.ValidationAlgorithm
     Hasher() hash.Hash
 }
@@ -54,9 +54,27 @@ func (p RSAProcessor) Sign(msg messages.Message) ([]byte, error) {
     return signature, err
 }
 
-func (p RSAProcessor) Verify(msg messages.Message, signature []byte) bool {
-    digest := msg.HashSensitiveRegion(sha256.New())
-    err := rsa.VerifyPKCS1v15(&p.publicKey, crypto.SHA256, digest, signature)
+func (p RSAProcessor) Verify(request, response messages.Message) bool {
+    validationPayload := response.GetValidationPayload()
+    validationAlgorithm := response.GetValidationAlgorithm()
+
+    var key *rsa.PublicKey
+    switch validationAlgorithm.Type() {
+    case codec.T_RSA_SHA256:
+        responseKey := validationAlgorithm.GetPublicKey()
+        rawKey, err := x509.ParsePKIXPublicKey(responseKey.Value())
+        if err != nil {
+            return false
+        }
+        key = rawKey.(*rsa.PublicKey)
+    default:
+        return false
+    }
+
+    signature := validationPayload.Value()
+    digest := response.HashSensitiveRegion(sha256.New())
+
+    err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest, signature)
     return err != nil
 }
 

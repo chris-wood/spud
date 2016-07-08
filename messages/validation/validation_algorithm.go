@@ -66,6 +66,12 @@ func CreateFromTLV(tlv codec.TLV) (ValidationAlgorithm, error) {
     return ValidationAlgorithm{validationAlgorithmType: tlv.Type(), publicKey: publicKey}, nil
 }
 
+// ValidationAlgorithm functions
+
+func (va ValidationAlgorithm) GetPublicKey() publickey.PublicKey {
+    return va.publicKey
+}
+
 // TLV interface functions
 
 func (va ValidationAlgorithm) Type() uint16 {
