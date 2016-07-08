@@ -1,6 +1,7 @@
 package codec
 
 import "fmt"
+import "encoding/binary"
 
 type Decoder struct {
 }
@@ -27,7 +28,14 @@ func hasInnerTLV(tlvType, tlvLength uint16, bytes []byte) bool {
     }
 }
 
+func readWord(bytes []byte) uint16 {
+    return binary.BigEndian.Uint16(bytes)
+}
+
 func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLV {
+
+    fmt.Printf("Decoding %d %d\n", tlvType, tlvLength)
+
     if hasInnerTLV(tlvType, tlvLength, bytes) {
         children := make([]TLV, 0)
         for offset := uint16(0); offset < tlvLength; {
@@ -39,7 +47,7 @@ func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLV {
             if offset + innerLength > tlvLength { // Failure.
                 return NewLeafTLV(tlvType, bytes[0:tlvLength])
             } else {
-                child := d.decodeTLV(innerType, innerLength, bytes[offset:])
+                child := d.decodeTLV(innerType, innerLength, bytes[offset:(offset + innerLength)])
                 children = append(children, child)
             }
 
@@ -51,10 +59,6 @@ func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLV {
     } else {
         return NewLeafTLV(tlvType, bytes[0:tlvLength])
     }
-}
-
-func readWord(bytes []byte) uint16 {
-    return uint16(bytes[0] << 8 | bytes[1])
 }
 
 func (d Decoder) Decode(bytes []byte) []TLV {

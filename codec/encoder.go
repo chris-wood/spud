@@ -5,6 +5,17 @@ import "encoding/binary"
 type Encoder struct {
 }
 
+func (e Encoder) EncodeContainer(tlvType, tlvLength uint16) []byte {
+    nsType := make([]byte, 2)
+    binary.BigEndian.PutUint16(nsType, tlvType)
+
+    nsLength := make([]byte, 2)
+    binary.BigEndian.PutUint16(nsLength, tlvLength)
+    tlTuple := append(nsType, nsLength...)
+
+    return tlTuple
+}
+
 func (e Encoder) EncodeTLV(tlv TLV) []byte {
     nsType := make([]byte, 2)
     binary.BigEndian.PutUint16(nsType, tlv.Type())

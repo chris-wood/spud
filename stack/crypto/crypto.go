@@ -59,11 +59,12 @@ func (c CryptoComponent) ProcessEgressMessages() {
         // Look up the processor based on the message
         // XXX: apply the LPM filter for the right processor here
         // if !msg.IsRequest() {
-            msg, err := addAuthenticator(msg, c.cryptoProcessor)
-            if err != nil {
-                fmt.Println(err.Error())
-            }
-            c.codecComponent.Enqueue(msg)
+        var err error
+        msg, err = addAuthenticator(msg, c.cryptoProcessor)
+        if err != nil {
+            fmt.Println(err.Error())
+        }
+        c.codecComponent.Enqueue(msg)
         // }
 
         if msg.IsRequest() {

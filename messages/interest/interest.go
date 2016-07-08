@@ -30,19 +30,19 @@ func (e interestError) Error() string {
 
 // Constructors
 
-func CreateWithName(name name.Name) Interest {
-    return Interest{name: name}
+func CreateWithName(name name.Name) *Interest {
+    return &Interest{name: name}
 }
 
 // func CreateWithNameAndPayload(name *name.Name, payload []byte) *Interest {
 //     return &Interest{name: name, payload: payload}
 // }
 
-func CreateFromLink(link link.Link) Interest {
-    return Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
+func CreateFromLink(link link.Link) *Interest {
+    return &Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
 }
 
-func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
+func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
     var interest Interest
     var interestName name.Name
     var err error
@@ -51,7 +51,7 @@ func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
         if tlv.Type() == codec.T_NAME {
             interestName, err = name.CreateFromTLV(tlv)
             if err != nil {
-                return interest, err
+                return &interest, err
             }
         } else if tlv.Type() == codec.T_KEYID_REST {
             // pass
@@ -62,7 +62,7 @@ func CreateFromTLV(tlvs codec.TLV) (Interest, error) {
         }
     }
 
-    return Interest{name: interestName}, nil
+    return &Interest{name: interestName}, nil
 }
 
 // TLV functions
@@ -177,11 +177,11 @@ func (i Interest) Payload() payload.Payload {
     return i.dataPayload
 }
 
-func (i Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
+func (i *Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
     i.validationAlgorithm = va
 }
 
-func (i Interest) SetValidationPayload(vp validation.ValidationPayload) {
+func (i *Interest) SetValidationPayload(vp validation.ValidationPayload) {
     i.validationPayload = vp
 }
 

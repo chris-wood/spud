@@ -27,35 +27,44 @@ func (e contentError) Error() string {
 
 // Constructors
 
-func CreateWithPayload(dataPayload payload.Payload) Content {
+func CreateWithPayload(dataPayload payload.Payload) *Content {
     var name name.Name
-    return Content{name: name, dataPayload: dataPayload}
+    return &Content{name: name, dataPayload: dataPayload}
 }
 
-func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) Content {
-    return Content{name: name, dataPayload: dataPayload}
+func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Content {
+    return &Content{name: name, dataPayload: dataPayload}
 }
 
-func CreateFromTLV(topLevelTLV codec.TLV) (Content, error) {
+func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
     var result Content
     var contentName name.Name
     var dataPayload payload.Payload
+    var validationAlgorithm validation.ValidationAlgorithm
+    var validationPayload validation.ValidationPayload
     var err error
 
     for _, tlv := range(topLevelTLV.Children()) {
         if tlv.Type() == codec.T_NAME {
             contentName, err = name.CreateFromTLV(tlv)
             if err != nil {
-                return result, contentError{"Unable to parse the content name"}
+                return &result, err
             }
         } else if tlv.Type() == codec.T_PAYLOAD {
             dataPayload = payload.Create(tlv.Value())
+        } else if tlv.Type() == codec.T_VALALG {
+            validationAlgorithm, err = validation.CreateFromTLV(tlv)
+            if err != nil {
+                return &result, err
+            }
+        } else if tlv.Type() == codec.T_VALPAYLOAD {
+            validationPayload = validation.NewValidationPayload(tlv.Value())
         } else {
             fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
         }
     }
 
-    return Content{name: contentName, dataPayload: dataPayload}, nil
+    return &Content{name: contentName, dataPayload: dataPayload, validationAlgorithm: validationAlgorithm, validationPayload: validationPayload}, nil
 }
 
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
@@ -190,11 +199,11 @@ func (c Content) Payload() payload.Payload {
     return c.dataPayload
 }
 
-func (c Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
+func (c *Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
     c.validationAlgorithm = va
 }
 
-func (c Content) SetValidationPayload(vp validation.ValidationPayload) {
+func (c *Content) SetValidationPayload(vp validation.ValidationPayload) {
     c.validationPayload = vp
 }
 

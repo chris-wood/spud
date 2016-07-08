@@ -60,7 +60,7 @@ func (p RSAProcessor) Verify(request, response messages.Message) bool {
     validationAlgorithm := response.GetValidationAlgorithm()
 
     var key *rsa.PublicKey
-    switch validationAlgorithm.Type() {
+    switch validationAlgorithm.GetValidationSuite() {
     case codec.T_RSA_SHA256:
         responseKey := validationAlgorithm.GetPublicKey()
         rawKey, err := x509.ParsePKIXPublicKey(responseKey.Value())
@@ -83,7 +83,7 @@ func (p RSAProcessor) Verify(request, response messages.Message) bool {
 
 func (p RSAProcessor) ProcessorDetails() validation.ValidationAlgorithm {
     var result validation.ValidationAlgorithm
-    publicKeyBytes, err := x509.MarshalPKIXPublicKey(p.publicKey)
+    publicKeyBytes, err := x509.MarshalPKIXPublicKey(&p.publicKey)
     if err != nil {
         return result
     }
