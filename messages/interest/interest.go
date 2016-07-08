@@ -127,6 +127,17 @@ func (i Interest) Identifier() string {
     return i.name.String()
 }
 
+func (i Interest) NamelessIdentifier() string {
+    result := ""
+    if i.keyId.Length() > 0 {
+        result += string(i.keyId.String())
+    }
+    if i.contentId.Length() > 0 {
+        result += string(i.contentId.String())
+    }
+    return result
+}
+
 func (i Interest) ComputeMessageHash(hasher hash.Hash) []byte {
     return make([]byte, 0)
 }

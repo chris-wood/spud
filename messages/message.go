@@ -19,20 +19,28 @@ func (e messageError) Error() string {
 
 // XXX: keep this clean
 type Message interface {
+    // Messages can encode themselves
+    Encode() []byte
+
+    // Messages have names, identifiers, and optionally, a payload
     Name() name.Name
     Identifier() string
-    HashSensitiveRegion(hasher hash.Hash) []byte
-    ComputeMessageHash(hasher hash.Hash) []byte
-    Encode() []byte
+    NamelessIdentifier() string
     Payload() payload.Payload
 
+    // Messages can compute the hashes of their protected regions and their complete packet formats.
+    // XXX: rename to "HashProtectedRegion"
+    HashSensitiveRegion(hasher hash.Hash) []byte
+    ComputeMessageHash(hasher hash.Hash) []byte
+
+    // Messages have validation information that are set outside of the messages themselves
     SetValidationAlgorithm(va validation.ValidationAlgorithm)
     SetValidationPayload(va validation.ValidationPayload)
-
     GetValidationAlgorithm() validation.ValidationAlgorithm
     GetValidationPayload() validation.ValidationPayload
 
-    // XXX: should this be `get message type`?
+    // Finally, each message has a type associated with it
+    // XXX: rename to "GetMessageType"
     IsRequest() bool
 }
 

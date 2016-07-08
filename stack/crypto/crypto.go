@@ -38,6 +38,12 @@ func addAuthenticator(msg messages.Message, proc processor.CryptoProcessor) (mes
 // XXX: this does not look at the request, yet
 func verifyAuthenticator(request, response messages.Message, crypto processor.CryptoProcessor) (bool, error) {
     validationPayload := response.GetValidationPayload()
+    // validationAlgorithm := response.GetValidationAlgorithm()
+    //
+    // switch validationAlgorithm.Type() {
+    //     case codec.
+    // }
+
     signature := validationPayload.Value()
     valid := crypto.Verify(response, signature)
     return valid, nil
@@ -77,7 +83,7 @@ func (c CryptoComponent) ProcessIngressMessages() {
                 success, err := verifyAuthenticator(request, msg, c.cryptoProcessor)
                 if err == nil {
                     if success {
-                        fmt.Println("valid!")
+                        fmt.Println(">>> valid signature.")
                     }
                 }
             } else {

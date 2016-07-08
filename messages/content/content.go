@@ -139,6 +139,11 @@ func (c Content) Identifier() string {
     }
 }
 
+func (c Content) NamelessIdentifier() string {
+    hash := c.ComputeMessageHash(sha256.New())
+    return string(hash)
+}
+
 func (c Content) HashSensitiveRegion(hasher hash.Hash) []byte {
     encoder := codec.Encoder{}
 
