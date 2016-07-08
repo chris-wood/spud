@@ -10,6 +10,7 @@ import "crypto/sha256"
 import "crypto/x509"
 import "crypto"
 import "hash"
+import "fmt"
 
 type CryptoProcessor interface {
     Sign(msg messages.Message) ([]byte, error)
@@ -28,7 +29,7 @@ type processorError struct {
 }
 
 func (p processorError) Error() string {
-    return p.problem
+    return fmt.Sprintf("%s", p.problem)
 }
 
 func NewRSAProcessor(keySize int) (RSAProcessor, error) {
@@ -64,10 +65,12 @@ func (p RSAProcessor) Verify(request, response messages.Message) bool {
         responseKey := validationAlgorithm.GetPublicKey()
         rawKey, err := x509.ParsePKIXPublicKey(responseKey.Value())
         if err != nil {
+            fmt.Println("error parsing public key")
             return false
         }
         key = rawKey.(*rsa.PublicKey)
     default:
+        fmt.Println("invalid crypto type")
         return false
     }
 
