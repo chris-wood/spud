@@ -33,9 +33,6 @@ func readWord(bytes []byte) uint16 {
 }
 
 func (d Decoder) decodeTLV(tlvType, tlvLength uint16, bytes []byte) TLV {
-
-    fmt.Printf("Decoding %d %d\n", tlvType, tlvLength)
-
     if hasInnerTLV(tlvType, tlvLength, bytes) {
         children := make([]TLV, 0)
         for offset := uint16(0); offset < tlvLength; {

@@ -62,6 +62,8 @@ func (p RSAProcessor) Verify(request, response messages.Message) bool {
     var key *rsa.PublicKey
     switch validationAlgorithm.GetValidationSuite() {
     case codec.T_RSA_SHA256:
+        // XXX: the key might not be here...
+        // we need a function that will, given a validation algorithm, resolve the key
         responseKey := validationAlgorithm.GetPublicKey()
         rawKey, err := x509.ParsePKIXPublicKey(responseKey.Value())
         if err != nil {

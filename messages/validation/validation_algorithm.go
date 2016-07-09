@@ -54,8 +54,6 @@ func createFromInnerTLV(validationType uint16, tlv codec.TLV) (ValidationAlgorit
 
     var publicKey publickey.PublicKey
 
-    fmt.Println("parsing the validation alg innards")
-
     for _, child := range(tlv.Children()) {
         if child.Type() == codec.T_PUBLICKEY {
             publicKey, err = publickey.CreateFromTLV(child)
@@ -72,8 +70,6 @@ func createFromInnerTLV(validationType uint16, tlv codec.TLV) (ValidationAlgorit
 
 func CreateFromTLV(tlv codec.TLV) (ValidationAlgorithm, error) {
     var result ValidationAlgorithm
-
-    fmt.Println("parsing the validation alg")
 
     // There must be one child
     if len(tlv.Children()) != 1 {
