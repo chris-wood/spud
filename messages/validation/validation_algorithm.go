@@ -2,6 +2,7 @@ package validation
 
 import "fmt"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/validation/publickey"
 
@@ -10,10 +11,10 @@ type ValidationAlgorithm struct {
 
     // Validation dependent data -- empty until otherwise instantiated
     publicKey publickey.PublicKey
+    keyId hash.Hash
     signatureTime uint64
 
     // XXX: write TLV wrappers for these fields
-    keyId []byte
     certificate []byte
     keyName link.Link
 }
@@ -28,18 +29,14 @@ func (e validationAlgorithmError) Error() string {
 
 // Constructor functions
 
-// func NewValidationAlgorithm(vaType uint16, keyId, publicKey, certificate []byte, keyName link.Link, signatureTime uint64) ValidationAlgorithm {
-//     return ValidationAlgorithm{validationAlgorithmType: vaType, keyId: keyId, publicKey: publicKey, certificate: certificate, keyName: keyName, signatureTime: signatureTime}
-// }
-
 func NewValidationAlgorithmFromPublickey(vaType uint16, publicKey publickey.PublicKey, signatureTime uint64) ValidationAlgorithm {
     return ValidationAlgorithm{validationAlgorithmType: vaType, publicKey: publicKey, signatureTime: signatureTime}
 }
 
-// func NewValidationAlgorithmFromKeyId(vaType uint16, keyId []byte, signatureTime uint64) ValidationAlgorithm {
-//     return ValidationAlgorithm{validationAlgorithmType: vaType, keyId: keyId, signatureTime: signatureTime}
-// }
-//
+func NewValidationAlgorithmFromKeyId(vaType uint16, keyId hash.Hash, signatureTime uint64) ValidationAlgorithm {
+    return ValidationAlgorithm{validationAlgorithmType: vaType, keyId: keyId, signatureTime: signatureTime}
+}
+
 // func NewValidationAlgorithmFromLink(vaType uint16, keyName link.Link, signatureTime uint64) ValidationAlgorithm {
 //     return ValidationAlgorithm{validationAlgorithmType: vaType, keyName: keyName, signatureTime: signatureTime}
 // }
