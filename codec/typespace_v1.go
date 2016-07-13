@@ -40,11 +40,12 @@ const T_PAYLOADTYPE_KEY uint16 = 0x01
 const T_PAYLOADTYPE_LINK uint16 = 0x02
 const T_PAYLOADTYPE_MANIFEST uint16 = 0x3
 
-// Validation fields
+// Validation fields - crypto suites
 const T_CRC32C uint16 = 0x0002
 const T_HMAC_SHA256 uint16 = 0x0003
 const T_RSA_SHA256 uint16 = 0x0006
 
+// Validation fields - validation dependent data
 const T_KEYID uint16 = 0x0009
 const T_PUBLICKEY uint16 = 0x000B
 const T_SIGTIME uint16 = 0x000F

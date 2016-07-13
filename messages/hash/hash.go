@@ -30,6 +30,11 @@ func CreateTruncated(hash hash.Hash, truncatedLength int) Hash {
     return Hash{digest: bytes}
 }
 
+func CreateFromTLV(tlv codec.TLV) (Hash, error) {
+    var result Hash
+    return result, nil
+}
+
 // TLV functions
 
 func (h Hash) Type() uint16 {
@@ -51,8 +56,6 @@ func (h Hash) Value() []byte  {
 func (h Hash) Children() []codec.TLV {
     return nil
 }
-
-// String functions
 
 func (h Hash) String() string {
     return string(h.digest)
