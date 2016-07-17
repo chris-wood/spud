@@ -67,7 +67,7 @@ func testStack() {
     myStack := stack.Create("")
     api := adapter.NewNameAPI(myStack)
 
-    api.Serve("/hello/spud/", generateResponse)
+    api.Serve("ccnx:/hello/spud", generateResponse)
     api.Get("ccnx:/hello/spud", displayResponse)
 
     reader := bufio.NewReader(os.Stdin)

@@ -23,12 +23,16 @@ func (e nameError) Error() string {
 
 func parseNameStringWithoutSchema(nameString string) ([]name_segment.NameSegment, error) {
     segments := make([]name_segment.NameSegment, 0)
-    for _, segmentString := range(strings.Split(nameString, "/")) {
+    splits := strings.Split(nameString, "/")
+    for index, segmentString := range(splits) {
         nextSegment, err := name_segment.Parse(segmentString)
         if err != nil {
             return nil, err
         }
-        segments = append(segments, nextSegment)
+
+        if !(index == len(splits) - 1 && nextSegment.Length() == 0) {
+            segments = append(segments, nextSegment)
+        }
     }
     return segments, nil
 }
@@ -119,19 +123,24 @@ func (n Name) Prefix(num int) string {
     }
 
     prefix := "/"
-    for i := 0; i < num; i++ {
+    for i := 0; i < num - 1; i++ {
         prefix += n.Segments[i].String() + "/"
     }
+    prefix += n.Segments[num - 1].String()
 
     return prefix
+}
+
+func (n Name) SegmentStrings() []string {
+    segments := make([]string, 0)
+    for _, v := range(n.Segments) {
+        segments = append(segments, v.String())
+    }
+    return segments
 }
 
 // String functions
 
 func (n Name) String() string {
-    segmentStrings := make([]string, len(n.Segments))
-    for index, segment := range(n.Segments) {
-        segmentStrings[index] = segment.String()
-    }
-    return "ccnx:/" + strings.Join(segmentStrings, "/")
+    return "ccnx:" + n.Prefix(len(n.Segments))
 }

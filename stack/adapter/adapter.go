@@ -1,5 +1,6 @@
 package adapter
 
+import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
@@ -9,20 +10,23 @@ import "github.com/chris-wood/spud/messages/content"
 type NameAPI struct {
     apiStack stack.Stack
 
-    prefixMap map[string]RequestCallback
+    prefixTable lpm.LPM
+    // prefixMap map[string]RequestCallback
     pendingMap map[string]ResponseCallback
 }
 
 type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
 
-func NewNameAPI(s stack.Stack) NameAPI {
-    api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback), pendingMap: make(map[string]ResponseCallback)}
+func NewNameAPI(s stack.Stack) *NameAPI {
+    prefixLPM := lpm.LPM{}
+    // api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback), pendingMap: make(map[string]ResponseCallback)}
+    api := &NameAPI{apiStack: s, prefixTable: prefixLPM, pendingMap: make(map[string]ResponseCallback)}
     go api.process()
     return api
 }
 
-func (n NameAPI) Get(nameString string, callback ResponseCallback) {
+func (n *NameAPI) Get(nameString string, callback ResponseCallback) {
     requestName, err := name.Parse(nameString)
     if err == nil {
         request := interest.CreateWithName(requestName)
@@ -31,7 +35,7 @@ func (n NameAPI) Get(nameString string, callback ResponseCallback) {
     }
 }
 
-func (n NameAPI) process() {
+func (n *NameAPI) process() {
     for ;; {
         msg := n.apiStack.Dequeue()
 
@@ -39,10 +43,14 @@ func (n NameAPI) process() {
             // XXX: this needs to use LPM to identify the service prefix
             requestName := msg.Name()
             numSsegments := len(requestName.Segments)
+
             for index := 1; index <= numSsegments; index++ {
                 prefix := requestName.Prefix(index)
-                callback, ok := n.prefixMap[prefix]
+                // callback, ok := n.prefixMap[prefix]
+                callbackInterface, ok := n.prefixTable.Lookup(prefix)
+
                 if ok {
+                    callback := callbackInterface.(RequestCallback)
                     go func() {
                         // XXX: this needs to be the full name string, not the prefix
                         data := callback(prefix, msg.Payload().Value())
@@ -66,7 +74,12 @@ func (n NameAPI) process() {
     }
 }
 
-func (n NameAPI) Serve(prefix string, callback RequestCallback) {
+func (n *NameAPI) Serve(prefix string, callback RequestCallback) {
     // XX store the prefix, callback tuple in the map
-    n.prefixMap[prefix] = callback
+    // n.prefixMap[prefix] = callback
+    prefixName, err := name.Parse(prefix)
+    if err == nil {
+        prefixString := prefixName.Prefix(len(prefixName.Segments))
+        n.prefixTable.Insert(prefixString, callback)
+    }
 }
