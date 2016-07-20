@@ -54,24 +54,23 @@ func (l *LPM) extendTables(n int) {
     }
 }
 
-func (l *LPM) Insert(key string, value interface{}) bool {
-    components := strings.Split(key, "/")
-    l.extendTables(len(components))
+func (l *LPM) Insert(keys []string, value interface{}) bool {
+    l.extendTables(len(keys))
 
-    for index, _ := range(components) {
-        prefix := strings.Join(components[:index + 1], "")
+    for index, _ := range(keys) {
+        prefix := strings.Join(keys[:index + 1], "")
         l.tables[index].Insert(prefix, value)
     }
 
     return true
 }
 
-func (l *LPM) Lookup(key string) (interface{}, bool) {
-    components := strings.Split(key, "/")
-    l.extendTables(len(components))
+func (l *LPM) Lookup(keys []string) (interface{}, bool) {
+    l.extendTables(len(keys))
 
-    for index, _ := range(components) {
-        prefix := strings.Join(components[:index + 1], "")
+    // XXX: this is wrong -- we need to lookup from the
+    for index, _ := range(keys) {
+        prefix := strings.Join(keys[:index + 1], "")
         if val, err := l.tables[index].Lookup(prefix); err == nil {
             return val, true
         }

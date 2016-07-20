@@ -4,6 +4,7 @@ import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/validation/publickey"
+
 import "crypto/rand"
 import "crypto/rsa"
 import "crypto/sha256"
@@ -13,6 +14,7 @@ import "hash"
 import "fmt"
 
 type CryptoProcessor interface {
+    CanVerify(msg messages.Message) bool
     Sign(msg messages.Message) ([]byte, error)
     Verify(request, response messages.Message) bool
     ProcessorDetails() validation.ValidationAlgorithm
@@ -97,4 +99,23 @@ func (p RSAProcessor) ProcessorDetails() validation.ValidationAlgorithm {
 
 func (p RSAProcessor) Hasher() hash.Hash {
     return sha256.New()
+}
+
+func (p RSAProcessor) CanVerify(msg messages.Message) bool {
+    validationAlgorithm := msg.GetValidationAlgorithm()
+
+    switch validationAlgorithm.GetValidationSuite() {
+    case codec.T_RSA_SHA256:
+        responseKey := validationAlgorithm.GetPublicKey()
+        _, err := x509.ParsePKIXPublicKey(responseKey.Value())
+        if err != nil {
+            return false
+        }
+        return true
+    default:
+        fmt.Println("invalid crypto type")
+        return false
+    }
+
+    return false
 }

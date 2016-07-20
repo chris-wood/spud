@@ -20,9 +20,15 @@ type ResponseCallback func([]byte)
 
 func NewNameAPI(s stack.Stack) *NameAPI {
     prefixLPM := lpm.LPM{}
-    // api := NameAPI{apiStack: s, prefixMap: make(map[string]RequestCallback), pendingMap: make(map[string]ResponseCallback)}
-    api := &NameAPI{apiStack: s, prefixTable: prefixLPM, pendingMap: make(map[string]ResponseCallback)}
+
+    api := &NameAPI{
+        apiStack: s,
+        prefixTable: prefixLPM,
+        pendingMap: make(map[string]ResponseCallback),
+    }
+
     go api.process()
+
     return api
 }
 
@@ -33,6 +39,10 @@ func (n *NameAPI) Get(nameString string, callback ResponseCallback) {
         n.pendingMap[request.Identifier()] = callback
         n.apiStack.Enqueue(request)
     }
+}
+
+func (n *NameAPI) Put(nameString string, data []byte) {
+    // XXX: pass to chunker or assembler component
 }
 
 func (n *NameAPI) process() {
@@ -46,8 +56,9 @@ func (n *NameAPI) process() {
 
             for index := 1; index <= numSsegments; index++ {
                 prefix := requestName.Prefix(index)
+                nameComponents := requestName.SegmentStrings()
                 // callback, ok := n.prefixMap[prefix]
-                callbackInterface, ok := n.prefixTable.Lookup(prefix)
+                callbackInterface, ok := n.prefixTable.Lookup(nameComponents)
 
                 if ok {
                     callback := callbackInterface.(RequestCallback)
@@ -79,7 +90,7 @@ func (n *NameAPI) Serve(prefix string, callback RequestCallback) {
     // n.prefixMap[prefix] = callback
     prefixName, err := name.Parse(prefix)
     if err == nil {
-        prefixString := prefixName.Prefix(len(prefixName.Segments))
-        n.prefixTable.Insert(prefixString, callback)
+        nameComponents := prefixName.SegmentStrings()
+        n.prefixTable.Insert(nameComponents, callback)
     }
 }

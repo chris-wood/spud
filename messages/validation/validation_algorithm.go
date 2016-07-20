@@ -87,6 +87,10 @@ func (va ValidationAlgorithm) GetPublicKey() publickey.PublicKey {
     return va.publicKey
 }
 
+func (va ValidationAlgorithm) GetKeyLink() link.Link {
+    return va.keyName
+}
+
 // TLV interface functions
 
 func (va ValidationAlgorithm) Type() uint16 {

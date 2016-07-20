@@ -9,7 +9,7 @@ import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/stack/adapter"
+import "github.com/chris-wood/spud/stack/api/adapter"
 
 import "crypto/rand"
 

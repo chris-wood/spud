@@ -1,10 +1,10 @@
 package stack
 
 import "github.com/chris-wood/spud/messages"
-import "github.com/chris-wood/spud/stack/connector"
-import "github.com/chris-wood/spud/stack/codec"
-import "github.com/chris-wood/spud/stack/crypto"
-import "github.com/chris-wood/spud/stack/crypto/processor"
+import "github.com/chris-wood/spud/stack/component/connector"
+import "github.com/chris-wood/spud/stack/component/codec"
+import "github.com/chris-wood/spud/stack/component/crypto"
+import "github.com/chris-wood/spud/stack/component/crypto/processor"
 
 type Component interface {
     Enqueue(messages.Message)

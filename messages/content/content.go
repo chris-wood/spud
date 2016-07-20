@@ -36,6 +36,14 @@ func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Cont
     return &Content{name: name, dataPayload: dataPayload}
 }
 
+// func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
+//     return &Content{name: name, payload: payload}
+// }
+//
+// func CreateWithNameAndKey(name, *name.Name, payload []byte) *Content {
+//     return &Content{name: name, payload: payload}
+// }
+
 func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
     var result Content
     var contentName name.Name
@@ -66,14 +74,6 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
 
     return &Content{name: contentName, dataPayload: dataPayload, validationAlgorithm: validationAlgorithm, validationPayload: validationPayload}, nil
 }
-
-// func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
-//     return &Content{name: name, payload: payload}
-// }
-//
-// func CreateWithNameAndKey(name, *name.Name, payload []byte) *Content {
-//     return &Content{name: name, payload: payload}
-// }
 
 // TLV functions
 

@@ -3,7 +3,7 @@ package codec
 import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/codec"
-import "github.com/chris-wood/spud/stack/connector"
+import "github.com/chris-wood/spud/stack/component/connector"
 
 const PKT_INTEREST uint8 = 0x00
 const PKT_CONTENT uint8 = 0x01
