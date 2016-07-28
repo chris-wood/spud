@@ -5,6 +5,7 @@ import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto"
 import "github.com/chris-wood/spud/stack/component/crypto/processor"
+import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type Component interface {
     Enqueue(messages.Message)
@@ -15,8 +16,6 @@ type Component interface {
 
 type Stack struct {
     components []Component
-    codecComponent codec.CodecComponent
-    forwarderConnector connector.ForwarderConnector
 }
 
 func (s Stack) Enqueue(msg messages.Message) {
@@ -46,10 +45,15 @@ func Create(config string) Stack {
     // XXX: the processor information would be pulled from the configuration file
     // XXX: check crypto processor errors here
     rsaProcessor, _ := processor.NewRSAProcessor(2048)
-    cryptoComponent := crypto.NewCryptoComponent(rsaProcessor, codecComponent)
+    validationAlgorithm := rsaProcessor.ProcessorDetails()
+
+    cryptoContext := context.NewCryptoContext()
+    cryptoContext.AddTrustedKey(validationAlgorithm.GetKeyIdString(), validationAlgorithm.GetPublicKey)
+
+    cryptoComponent := crypto.NewCryptoComponent(cryptoContext, rsaProcessor, codecComponent)
     go cryptoComponent.ProcessEgressMessages()
     go cryptoComponent.ProcessIngressMessages()
 
     // 4. assemble the stack
-    return Stack{components: []Component{cryptoComponent, codecComponent}, codecComponent: codecComponent, forwarderConnector: fc}
+    return Stack{components: []Component{cryptoComponent, codecComponent}}
 }

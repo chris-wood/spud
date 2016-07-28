@@ -17,6 +17,7 @@ type CryptoProcessor interface {
     CanVerify(msg messages.Message) bool
     Sign(msg messages.Message) ([]byte, error)
     Verify(request, response messages.Message) bool
+
     ProcessorDetails() validation.ValidationAlgorithm
     Hasher() hash.Hash
 }

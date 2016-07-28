@@ -6,6 +6,7 @@ import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto/processor"
+import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type CryptoComponent struct {
     ingress chan messages.Message
@@ -17,17 +18,19 @@ type CryptoComponent struct {
     // XXX: queue of packets pending verification
     pendingVerificationQueue map[string]messages.Message
 
+    cryptoContext *context.CryptoContext
     cryptoProcessor processor.CryptoProcessor
     codecComponent codec.CodecComponent
 }
 
-func NewCryptoComponent(cryptoProcessor processor.CryptoProcessor, codecComponent codec.CodecComponent) CryptoComponent {
+func NewCryptoComponent(cryptoContext *context.CryptoContext, cryptoProcessor processor.CryptoProcessor, codecComponent codec.CodecComponent) CryptoComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
     return CryptoComponent{
         ingress: ingress,
         egress: egress,
+        cryptoContext: cryptoContext,
         cryptoProcessor: cryptoProcessor,
         codecComponent: codecComponent,
         pendingMap: make(map[string]messages.Message),
@@ -56,7 +59,6 @@ func (c CryptoComponent) ProcessEgressMessages() {
         // XXX: apply the LPM filter for the right processor here
         // if !msg.IsRequest() {
 
-
         var err error
         msg, err = addAuthenticator(msg, c.cryptoProcessor)
         if err != nil {
@@ -78,6 +80,37 @@ func (c CryptoComponent) handleIngressRequest(msg messages.Message) {
     c.ingress <- msg
 }
 
+// Check to see if there are any other messages to verify with this
+// newly verified key. If there is, recursively call the verify request
+func (c CryptoComponent) processPendingResponses(msg messages.Message) {
+    dependentRequest, ok := c.pendingVerificationQueue[msg.Identifier()]
+    if ok {
+        c.handleIngressResponse(dependentRequest)
+        delete(c.pendingVerificationQueue, msg.Identifier())
+    } else {
+        c.ingress <- msg
+        delete(c.pendingMap, msg.Identifier())
+    }
+}
+
+func (c CryptoComponent) dropPendingResponses(msg messages.Message) {
+    delete(c.pendingVerificationQueue, msg.Identifier())
+    delete(c.pendingMap, msg.Identifier())
+}
+
+// XXX: rename this
+func (c CryptoComponent) checkTrustProperties(msg messages.Message) {
+    validationAlgorithm := msg.GetValidationAlgorithm()
+    keyId := validationAlgorithm.GetKeyIdString()
+
+    if c.cryptoContext.IsTrustedKey(keyId) {
+        c.processPendingResponses(msg)
+    } else {
+        fmt.Println("Not a trusted key. Abort.")
+        c.dropPendingResponses(msg)
+    }
+}
+
 func (c CryptoComponent) handleIngressResponse(msg messages.Message) {
     // Check to see if this is a response to a previous key name
     request, isPending := c.pendingMap[msg.Identifier()]
@@ -96,23 +129,10 @@ func (c CryptoComponent) handleIngressResponse(msg messages.Message) {
             // Save the reference to this response
             c.pendingVerificationQueue[keyMsg.Identifier()] = msg
         } else {
-            success := c.cryptoProcessor.Verify(request, msg)
-
-            if success {
-                fmt.Println("VALID signature.")
+            if c.cryptoProcessor.Verify(request, msg) {
+                c.checkTrustProperties(msg)
             } else {
-                fmt.Println("INVALID signature.")
-            }
-
-            // Check to see if there are any other messages to verify with this
-            // newly verified key. If there is, recursively call the verify request
-            dependentRequest, ok := c.pendingVerificationQueue[msg.Identifier()]
-            if ok {
-                c.handleIngressResponse(dependentRequest)
-                delete(c.pendingVerificationQueue, msg.Identifier())
-            } else {
-                c.ingress <- msg
-                delete(c.pendingMap, msg.Identifier())
+                c.dropPendingResponses(msg)
             }
         }
     } else {

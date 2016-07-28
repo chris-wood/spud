@@ -44,7 +44,6 @@ type Message interface {
     IsRequest() bool
 }
 
-// XXX: create the right type of message here
 func CreateFromTLV(tlv []codec.TLV) (Message, error) {
     var result Message
     var err error
@@ -61,12 +60,6 @@ func CreateFromTLV(tlv []codec.TLV) (Message, error) {
         fmt.Println("invalid type " + string(root.Type()))
         fmt.Println(root.Type())
         return result, messageError{"Unable to create a message from the top-level TLV type " + string(root.Type())}
-    }
-
-    if err != nil {
-        fmt.Println("tried and failed to create a message from a TLV")
-    } else {
-        fmt.Println("Reconstructed message: " + result.Identifier())
     }
 
     return result, err
