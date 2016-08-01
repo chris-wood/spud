@@ -6,8 +6,6 @@ import "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/validation/publickey"
 
-import "crypto/sha256"
-
 type ValidationAlgorithm struct {
     validationAlgorithmType uint16
 
@@ -93,11 +91,9 @@ func (va ValidationAlgorithm) GetKeyLink() link.Link {
     return va.keyName
 }
 
-func (va ValidationAlgorithm) GetKeyIdString() string {
+func (va ValidationAlgorithm) KeyIdString() string {
     if va.publicKey.Length() > 0 {
-        hasher := sha256.New()
-        hasher.Write(va.publicKey.Value())
-        return string(hasher.Sum(nil))
+        return va.publicKey.KeyIdString()
     }
 
     // XXX: handle the other cases here

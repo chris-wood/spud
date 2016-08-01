@@ -1,6 +1,9 @@
 package publickey
 
 import "github.com/chris-wood/spud/codec"
+
+import "crypto/sha256"
+
 import "fmt"
 
 type PublicKey struct {
@@ -47,8 +50,12 @@ func (pk PublicKey) Children() []codec.TLV {
     return nil
 }
 
-// String functions
-
 func (pk PublicKey) String() string {
     return string(pk.bytes)
+}
+
+func (pk PublicKey) KeyIdString() string {
+    hasher := sha256.New()
+    hasher.Write(pk.Value())
+    return string(hasher.Sum(nil))
 }

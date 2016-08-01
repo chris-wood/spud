@@ -27,10 +27,10 @@ type Message interface {
     Identifier() string
     NamelessIdentifier() string
     Payload() payload.Payload
+    PayloadType() uint16
 
     // Messages can compute the hashes of their protected regions and their complete packet formats.
-    // XXX: rename to "HashProtectedRegion"
-    HashSensitiveRegion(hasher hash.Hash) []byte
+    HashProtectedRegion(hasher hash.Hash) []byte
     ComputeMessageHash(hasher hash.Hash) []byte
 
     // Messages have validation information that are set outside of the messages themselves

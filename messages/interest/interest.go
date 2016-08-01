@@ -148,7 +148,7 @@ func (i Interest) Encode() []byte {
     return bytes
 }
 
-func (i Interest) HashSensitiveRegion(hasher hash.Hash) []byte {
+func (i Interest) HashProtectedRegion(hasher hash.Hash) []byte {
     encoder := codec.Encoder{}
 
     value := encoder.EncodeTLV(i.name)
@@ -175,6 +175,10 @@ func (i Interest) IsRequest() bool {
 
 func (i Interest) Payload() payload.Payload {
     return i.dataPayload
+}
+
+func (i Interest) PayloadType() uint16 {
+    return codec.T_PAYLOADTYPE_DATA
 }
 
 func (i *Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {

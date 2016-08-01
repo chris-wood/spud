@@ -11,6 +11,7 @@ import "github.com/chris-wood/spud/codec"
 type Content struct {
     name name.Name
     dataPayload payload.Payload
+    payloadType uint16
 
     // Validation information
     validationAlgorithm validation.ValidationAlgorithm
@@ -29,11 +30,11 @@ func (e contentError) Error() string {
 
 func CreateWithPayload(dataPayload payload.Payload) *Content {
     var name name.Name
-    return &Content{name: name, dataPayload: dataPayload}
+    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA}
 }
 
 func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Content {
-    return &Content{name: name, dataPayload: dataPayload}
+    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA}
 }
 
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
@@ -173,7 +174,7 @@ func (c Content) NamelessIdentifier() string {
     return string(hash)
 }
 
-func (c Content) HashSensitiveRegion(hasher hash.Hash) []byte {
+func (c Content) HashProtectedRegion(hasher hash.Hash) []byte {
     encoder := codec.Encoder{}
 
     value := make([]byte, 0)
@@ -197,6 +198,10 @@ func (c Content) IsRequest() bool {
 
 func (c Content) Payload() payload.Payload {
     return c.dataPayload
+}
+
+func (c Content) PayloadType() uint16 {
+    return c.payloadType
 }
 
 func (c *Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
