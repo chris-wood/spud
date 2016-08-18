@@ -1,9 +1,11 @@
 package context
 
+import "github.com/chris-wood/spud/stack/component/crypto/context/schema"
 import "fmt"
 
 type CryptoContext struct {
     trustedKeys map[string]interface{}
+    trustSchema *schema.Schema
 }
 
 type contextError struct {

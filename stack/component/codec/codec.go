@@ -3,6 +3,7 @@ package codec
 import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/component/connector"
 
 const PKT_INTEREST uint8 = 0x00
@@ -14,14 +15,15 @@ type CodecComponent struct {
     ingress chan messages.Message
     egress chan messages.Message
 
+    stackCache *cache.Cache
     connector connector.ForwarderConnector
 }
 
-func NewCodecComponent(conn connector.ForwarderConnector) CodecComponent {
+func NewCodecComponent(conn connector.ForwarderConnector, stackCache *cache.Cache) CodecComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
-    return CodecComponent{ingress: ingress, egress: egress, connector: conn}
+    return CodecComponent{ingress: ingress, egress: egress, connector: conn, stackCache: stackCache}
 }
 
 func readWord(bytes []byte) uint16 {
@@ -68,6 +70,12 @@ func (c CodecComponent) ProcessEgressMessages() {
         messageType := readWord(messageBytes)
         wireFormat := buildPacket(messageType, optionalHeader, messageBytes)
 
+        switch messageType {
+            case codec.T_OBJECT:
+                c.stackCache.Insert(msg.Identifier(), wireFormat)
+                break
+        }
+
         // 4. Send the wiret format packet to the forwarder connector
         c.connector.Write(wireFormat)
     }
@@ -86,9 +94,16 @@ func (c CodecComponent) ProcessIngressMessages() {
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
         message, err := messages.CreateFromTLV(decodedTlV)
 
-        // 3. Enqueue in the upstream (ingress) queue
-        if err == nil {
+        identity := message.Identifier()
+        match, isPresent := c.stackCache.Lookup(identity)
+
+        // If the response is cached, just serve it
+        if isPresent && message.IsRequest() {
+            c.connector.Write(match)
+        } else if err == nil { // 3. Enqueue in the upstream (ingress) queue
             c.ingress <- message
+        } else {
+            // drop
         }
     }
 }

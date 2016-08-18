@@ -1,30 +1,26 @@
 package cache
 
-import "github.com/chris-wood/spud/messages"
-
 type Cache struct {
-    table map[string]messages.Message
+    table map[string][]byte
 }
 
-func NewCache() *CodecComponent {
+func NewCache() *Cache {
     return &Cache{
-        table: make(map[string]messages.Message)
+        table: make(map[string][]byte),
     }
 }
 
-func (c *Cache) Insert(msg messages.Message) bool {
-    identity := msg.Identifier()
+func (c *Cache) Insert(identity string, wireFormat []byte) bool {
     _, ok := c.table[identity]
     if !ok {
         // XXX: apply eviction strategy here...
-        c.table[identity] = msg
+        c.table[identity] = wireFormat
         return true
     }
     return false
 }
 
-func (c *Cache) Lookup(msg messages.Message) (messages.Message, bool) {
-    identity := msg.Identifier()
+func (c *Cache) Lookup(identity string) ([]byte, bool) {
     match, ok := c.table[identity]
     return match, ok
 }

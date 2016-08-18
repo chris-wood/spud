@@ -1,6 +1,7 @@
 package stack
 
 import "github.com/chris-wood/spud/messages"
+import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto"
@@ -36,24 +37,28 @@ func Create(config string) Stack {
     // 1. create connector
     fc, _ := connector.NewLoopbackForwarderConnector()
 
+    // 1.5. create the shared cache
+    stackCache := cache.NewCache()
+
     // 2. create codec
-    codecComponent := codec.NewCodecComponent(fc)
-    go codecComponent.ProcessEgressMessages()
-    go codecComponent.ProcessIngressMessages()
+    codecComponent := codec.NewCodecComponent(fc, stackCache)
 
     // 3. create crypto component
     // XXX: the processor information would be pulled from the configuration file
     // XXX: check crypto processor errors here
     rsaProcessor, _ := processor.NewRSAProcessor(2048)
-    validationAlgorithm := rsaProcessor.ProcessorDetails()
-
     cryptoContext := context.NewCryptoContext()
-    cryptoContext.AddTrustedKey(validationAlgorithm.GetKeyIdString(), validationAlgorithm.GetPublicKey)
-
-    cryptoComponent := crypto.NewCryptoComponent(cryptoContext, rsaProcessor, codecComponent)
-    go cryptoComponent.ProcessEgressMessages()
-    go cryptoComponent.ProcessIngressMessages()
+    cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
+    cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
 
     // 4. assemble the stack
-    return Stack{components: []Component{cryptoComponent, codecComponent}}
+    stack := Stack{components: []Component{cryptoComponent, codecComponent}}
+
+    // 5. start each component
+    for _, component := range(stack.components) {
+        go component.ProcessEgressMessages()
+        go component.ProcessIngressMessages()
+    }
+
+    return stack
 }

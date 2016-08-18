@@ -1,9 +1,11 @@
 package crypto
 
 import "fmt"
+import tlvCodec "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/validation"
+import "github.com/chris-wood/spud/messages/validation/publickey"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto/processor"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
@@ -18,12 +20,15 @@ type CryptoComponent struct {
     // XXX: queue of packets pending verification
     pendingVerificationQueue map[string]messages.Message
 
+    // The context will be modified
     cryptoContext *context.CryptoContext
-    cryptoProcessor processor.CryptoProcessor
     codecComponent codec.CodecComponent
+
+    // XXX: LPM table of processors
+    cryptoProcessor processor.CryptoProcessor
 }
 
-func NewCryptoComponent(cryptoContext *context.CryptoContext, cryptoProcessor processor.CryptoProcessor, codecComponent codec.CodecComponent) CryptoComponent {
+func NewCryptoComponent(cryptoContext *context.CryptoContext, codecComponent codec.CodecComponent) CryptoComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
@@ -31,11 +36,19 @@ func NewCryptoComponent(cryptoContext *context.CryptoContext, cryptoProcessor pr
         ingress: ingress,
         egress: egress,
         cryptoContext: cryptoContext,
-        cryptoProcessor: cryptoProcessor,
         codecComponent: codecComponent,
         pendingMap: make(map[string]messages.Message),
         pendingVerificationQueue: make(map[string]messages.Message),
     }
+}
+
+func (c *CryptoComponent) AddCryptoProcessor(pattern string, proc processor.CryptoProcessor) {
+    c.cryptoProcessor = proc
+    validationAlgorithm := proc.ProcessorDetails()
+
+    // XXX: build the named key (certificate) and add it to the cache
+
+    c.cryptoContext.AddTrustedKey(validationAlgorithm.KeyIdString(), validationAlgorithm.GetPublicKey())
 }
 
 func addAuthenticator(msg messages.Message, proc processor.CryptoProcessor) (messages.Message, error) {
@@ -57,6 +70,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
 
         // Look up the processor based on the message
         // XXX: apply the LPM filter for the right processor here
+        // XXX: processor is identified by the name only
         // if !msg.IsRequest() {
 
         var err error
@@ -87,6 +101,13 @@ func (c CryptoComponent) processPendingResponses(msg messages.Message) {
     if ok {
         c.handleIngressResponse(dependentRequest)
         delete(c.pendingVerificationQueue, msg.Identifier())
+
+        if msg.PayloadType() == tlvCodec.T_PAYLOADTYPE_KEY {
+            payload := msg.Payload()
+            rawKey := publickey.Create(payload.Value())
+
+            c.cryptoContext.AddTrustedKey(rawKey.KeyIdString(), rawKey)
+        }
     } else {
         c.ingress <- msg
         delete(c.pendingMap, msg.Identifier())
@@ -101,7 +122,7 @@ func (c CryptoComponent) dropPendingResponses(msg messages.Message) {
 // XXX: rename this
 func (c CryptoComponent) checkTrustProperties(msg messages.Message) {
     validationAlgorithm := msg.GetValidationAlgorithm()
-    keyId := validationAlgorithm.GetKeyIdString()
+    keyId := validationAlgorithm.KeyIdString()
 
     if c.cryptoContext.IsTrustedKey(keyId) {
         c.processPendingResponses(msg)
@@ -115,6 +136,9 @@ func (c CryptoComponent) handleIngressResponse(msg messages.Message) {
     // Check to see if this is a response to a previous key name
     request, isPending := c.pendingMap[msg.Identifier()]
     if isPending {
+
+        // XXX: how to identify the right processor? based on the name only?
+
         if !c.cryptoProcessor.CanVerify(msg) {
             // Pull out the key name
             // XXX: here we'd swtich on the type of locator

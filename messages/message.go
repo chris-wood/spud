@@ -42,6 +42,10 @@ type Message interface {
     // Finally, each message has a type associated with it
     // XXX: rename to "GetMessageType"
     IsRequest() bool
+
+    // XXX: implement these
+    // GetPacketType() int
+    // GetMessageType() int
 }
 
 func CreateFromTLV(tlv []codec.TLV) (Message, error) {
