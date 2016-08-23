@@ -13,11 +13,11 @@ func NewCache() *Cache {
 func (c *Cache) Insert(identity string, wireFormat []byte) bool {
     _, ok := c.table[identity]
     if !ok {
-        // XXX: apply eviction strategy here...
         c.table[identity] = wireFormat
         return true
+    } else { // aggregate
+        return false
     }
-    return false
 }
 
 func (c *Cache) Lookup(identity string) ([]byte, bool) {
