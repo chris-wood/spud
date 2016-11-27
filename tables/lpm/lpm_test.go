@@ -10,21 +10,22 @@ func createName(nameString string) name.Name {
 }
 
 func TestInsert(t *testing.T) {
-    names := []name.Name{
-        createName("ccnx:/hello/world"),
-        createName("ccnx:/hello/*"),
+    var cases = []struct {
+        inputName name.Name
+        inserted bool
+    }{
+        {createName("/hello/world"), true},
+        {createName("/hello/*"), true},
     }
 
     kvs := LPM{}
     value := 0
 
-    for _, n := range(names) {
-        components := n.SegmentStrings()
-        if kvs.Insert(components, value) != true {
+    for _, testCase := range cases {
+        components := testCase.inputName.SegmentStrings()
+        if testCase.inserted != kvs.Insert(components, value) {
             t.Errorf("Insert %s failed", components)
         }
-
-        // XXX: assert that the number of entries actually increased
     }
 }
 

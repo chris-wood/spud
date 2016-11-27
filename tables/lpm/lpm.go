@@ -68,7 +68,6 @@ func (l *LPM) Insert(keys []string, value interface{}) bool {
 func (l *LPM) Lookup(keys []string) (interface{}, bool) {
     l.extendTables(len(keys))
 
-    // XXX: this is wrong -- we need to lookup from the back to get the right LPM behavior
     for index := len(keys) - 1; index >= 0; index-- {
         prefix := strings.Join(keys[:index + 1], "")
         if val, err := l.tables[index].Lookup(prefix); err == nil {
