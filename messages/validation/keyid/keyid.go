@@ -25,7 +25,7 @@ func Create(keyDigest hash.Hash) KeyId {
 func CreateFromTLV(tlv codec.TLV) (KeyId, error) {
     var result KeyId
 
-    digest, err := hash.CreateFromTLV(tlv.Value())
+    digest, err := hash.CreateFromTLV(tlv.Children()[0])
     if err != nil {
         return result, err
     }

@@ -8,7 +8,7 @@ type PIT struct {
 
 func NewPIT() *PIT {
     return &PIT{
-        table: make(map[string][]byte),
+        table: make(map[string]messages.Message),
     }
 }
 
@@ -27,8 +27,8 @@ func (c *PIT) Lookup(identity string) (messages.Message, bool) {
 }
 
 func (c *PIT) Remove(identity string) {
-    match, ok := c.table[identity]
+    _, ok := c.table[identity]
     if ok {
-        delete(c, identity)
+        delete(c.table, identity)
     }
 }

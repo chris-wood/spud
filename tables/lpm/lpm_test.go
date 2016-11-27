@@ -1,8 +1,8 @@
 package lpm
 
 import "testing"
+
 import "github.com/chris-wood/spud/messages/name"
-import "github.com/chris-wood/spud/tables/lpm"
 
 func createName(nameString string) name.Name {
     result, _ := name.Parse(nameString)
@@ -15,7 +15,7 @@ func TestInsert(t *testing.T) {
         createName("ccnx:/hello/*"),
     }
 
-    kvs := lpm.LPM{}
+    kvs := LPM{}
     value := 0
 
     for _, n := range(names) {
