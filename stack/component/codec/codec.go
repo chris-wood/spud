@@ -4,6 +4,7 @@ import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/stack/cache"
+import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component/connector"
 
 const PKT_INTEREST uint8 = 0x00
@@ -16,14 +17,15 @@ type CodecComponent struct {
     egress chan messages.Message
 
     stackCache *cache.Cache
+    stackPit *pit.PIT
     connector connector.ForwarderConnector
 }
 
-func NewCodecComponent(conn connector.ForwarderConnector, stackCache *cache.Cache) CodecComponent {
+func NewCodecComponent(conn connector.ForwarderConnector, stackCache *cache.Cache, stackPit *pit.PIT) CodecComponent {
     egress := make(chan messages.Message)
     ingress := make(chan messages.Message)
 
-    return CodecComponent{ingress: ingress, egress: egress, connector: conn, stackCache: stackCache}
+    return CodecComponent{ingress: ingress, egress: egress, connector: conn, stackCache: stackCache, stackPit: stackPit}
 }
 
 func readWord(bytes []byte) uint16 {
@@ -70,6 +72,7 @@ func (c CodecComponent) ProcessEgressMessages() {
         messageType := readWord(messageBytes)
         wireFormat := buildPacket(messageType, optionalHeader, messageBytes)
 
+        // Insert into the cache (if we have one)
         switch messageType {
             case codec.T_OBJECT:
                 c.stackCache.Insert(msg.Identifier(), wireFormat)

@@ -2,6 +2,7 @@ package stack
 
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/stack/cache"
+import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto"
@@ -37,11 +38,12 @@ func Create(config string) Stack {
     // 1. create connector
     fc, _ := connector.NewLoopbackForwarderConnector()
 
-    // 1.5. create the shared cache
+    // 1.5. create the shared data structures
     stackCache := cache.NewCache()
+    stackPit := pit.NewPIT()
 
     // 2. create codec
-    codecComponent := codec.NewCodecComponent(fc, stackCache)
+    codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
     // 3. create crypto component
     // XXX: the processor information would be pulled from the configuration file
