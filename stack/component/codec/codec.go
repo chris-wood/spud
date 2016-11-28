@@ -72,15 +72,23 @@ func (c CodecComponent) ProcessEgressMessages() {
         messageType := readWord(messageBytes)
         wireFormat := buildPacket(messageType, optionalHeader, messageBytes)
 
-        // Insert into the cache (if we have one)
-        switch messageType {
-            case codec.T_OBJECT:
-                c.stackCache.Insert(msg.Identifier(), wireFormat)
-                break
+        // If the message type is a content, insert into the cache
+        // Otherwise, if it's an interest, insert into the PIT
+        if messageType == codec.T_OBJECT {
+            c.stackCache.Insert(msg.Identifier(), wireFormat)
+            c.connector.Write(wireFormat)
+        } else if messageType == codec.T_INTEREST {
+            _, found := c.stackPit.Lookup(msg.Identifier())
+            if !found {
+                c.stackPit.Insert(msg.Identifier(), msg) // XXX this check should be performed above to avoid unnecessary encoding
+                c.connector.Write(wireFormat)
+            } else {
+                // don't insert, just aggregate...
+            }
         }
 
         // 4. Send the wiret format packet to the forwarder connector
-        c.connector.Write(wireFormat)
+
     }
 }
 
@@ -97,6 +105,7 @@ func (c CodecComponent) ProcessIngressMessages() {
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
         message, err := messages.CreateFromTLV(decodedTlV)
 
+        // Lookup the item in the cache
         identity := message.Identifier()
         match, isPresent := c.stackCache.Lookup(identity)
 
