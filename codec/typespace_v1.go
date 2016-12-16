@@ -21,18 +21,35 @@ const T_PAYLDTYPE uint16 = 0x0005
 const T_EXPIRY uint16 = 0x0006
 const T_HASHGROUP uint16 = 0x0007
 const T_BLOCKHASHGROUP uint16 = 0x0008
+const T_KEX uint16 = 0x0009
+const T_ENCAP uint16 = 0x000A
 
 // name sements
 const T_NAMESEG_NAME uint16 = 0x0001
 const T_NAMESEG_IPID uint16 = 0x0002
 const T_NAMESEG_CHUNK uint16 = 0x0010
 const T_NAMESEG_VERSION uint16 = 0x0013
-
 const T_NAMESEG_APP0 uint16 = 0x1000
 const T_NAMESEG_APP1 uint16 = 0x1001
 const T_NAMESEG_APP2 uint16 = 0x1002
 const T_NAMESEG_APP3 uint16 = 0x1003
 const T_NAMESEG_APP4 uint16 = 0x1004
+
+// KEX message types
+const T_KEX_BAREHELLO uint16 = 0x0001
+const T_KEX_REJECT uint16 = 0x0002
+const T_KEX_HELLO uint16 = 0x0003
+const T_KEX_REJECT uint16 = 0x0004
+
+// KEX extension types
+const T_KEX_SOURCE_CHALLENGE uint16 = 0x0001
+const T_KEX_SOURCE_TOKEN uint16 = 0x0002
+const T_KEX_SOURCE_PROOF uint16 = 0x0003
+const T_KEX_MOVE_CHALLENGE uint16 = 0x0004
+const T_KEX_MOVE_TOKEN uint16 = 0x0005
+const T_KEX_MOVE_PROOF uint16 = 0x0006
+const T_KEX_SESSION_ID uint16 = 0x0007
+const T_KEX_TIMESTAMP uint16 = 0x0008
 
 // Payload type
 const T_PAYLOADTYPE_DATA uint16 = 0x00
