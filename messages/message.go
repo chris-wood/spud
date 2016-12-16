@@ -27,7 +27,7 @@ type Message interface {
     Identifier() string
     NamelessIdentifier() string
     Payload() payload.Payload
-    PayloadType() uint16
+    PayloadType() uint8
 
     // Messages can compute the hashes of their protected regions and their complete packet formats.
     HashProtectedRegion(hasher hash.Hash) []byte

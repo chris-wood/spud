@@ -162,6 +162,50 @@ func (kex KEX) TypeString() string {
     return "KEX"
 }
 
+func CreateFromTLV(kexTLV codec.TLV) (KEX, error) {
+    var result KEX
+
+    emap := make(map[string]KEXExtension)
+    kexType := kexTLV.Type()
+
+    for _, child := range(kexTLV.Children()) {
+        extension, err := CreateExtensionFromTLV(child)
+        if err != nil {
+            return result, err
+        }
+
+        // Drop the extension into the right slot
+        switch (extension.ExtType) {
+        case codec.T_KEX_SOURCE_CHALLENGE:
+            emap[_kSourceChallenge] = extension
+            break
+        case codec.T_KEX_SOURCE_TOKEN:
+            emap[_kSourceToken] = extension
+            break
+        case codec.T_KEX_SOURCE_PROOF:
+            emap[_kSourceProof] = extension
+            break
+        case codec.T_KEX_MOVE_CHALLENGE:
+            emap[_kMoveChallenge] = extension
+            break
+        case codec.T_KEX_MOVE_TOKEN:
+            emap[_kMoveProof] = extension
+            break
+        case codec.T_KEX_MOVE_PROOF:
+            emap[_kMoveProof] = extension
+            break
+        case codec.T_KEX_SESSION_ID:
+            emap[_kSessionID] = extension
+            break
+        case codec.T_KEX_TIMESTAMP:
+            emap[_kTimestamp] = extension
+            break
+        }
+    }
+
+    return KEX{kexType, emap}, nil
+}
+
 func (kex KEX) bareHelloValue() []byte {
     value := make([]byte, 0)
 
@@ -252,19 +296,38 @@ func (kex KEX) Length() uint16 {
 }
 
 func (kex KEX) bareHelloChildren() []codec.TLV {
-    return make([]codec.TLV, 0)
+    children := make([]codec.TLV, 0)
+
+    children = append(children, kex.extensionMap[_kSourceChallenge])
+
+    return children
 }
 
 func (kex KEX) rejectChidlren() []codec.TLV {
-    return make([]codec.TLV, 0)
+    children := make([]codec.TLV, 0)
+
+    children = append(children, kex.extensionMap[_kTimestamp])
+    children = append(children, kex.extensionMap[_kSourceToken])
+
+    return children
 }
 
 func (kex KEX) helloChildren() []codec.TLV {
-    return make([]codec.TLV, 0)
+    children := make([]codec.TLV, 0)
+
+    children = append(children, kex.extensionMap[_kTimestamp])
+    children = append(children, kex.extensionMap[_kSourceToken])
+    children = append(children, kex.extensionMap[_kSourceProof])
+
+    return children
 }
 
 func (kex KEX) acceptChildren() []codec.TLV {
-    return make([]codec.TLV, 0)
+    children := make([]codec.TLV, 0)
+
+    children = append(children, kex.extensionMap[_kSessionID])
+
+    return children
 }
 
 func (kex KEX) Children() []codec.TLV {

@@ -71,7 +71,7 @@ func CreateFromTLV(nameTlv codec.TLV) (Name, error) {
     for _, child := range(nameTlv.Children()) {
         segment, err := name_segment.CreateFromTLV(child)
         if err != nil {
-            return result, nil
+            return result, err
         }
         children = append(children, segment)
     }

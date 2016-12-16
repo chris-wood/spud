@@ -4,6 +4,7 @@ import "fmt"
 import "hash"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/kex"
 import typedhash "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/payload"
@@ -13,7 +14,13 @@ type Interest struct {
     name name.Name
     keyId typedhash.Hash
     contentId typedhash.Hash
+
+    // Payload and its type
+    payloadType uint8
     dataPayload payload.Payload
+
+    // KEX signalling and encryption information
+    kexMessage kex.KEX
 
     // Validation information
     validationAlgorithm validation.ValidationAlgorithm
@@ -53,6 +60,10 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
             if err != nil {
                 return &interest, err
             }
+        } else if tlv.Type() == codec.T_PAYLDTYPE {
+            // pass
+        } else if tlv.Type() == codec.T_PAYLOAD {
+            // pass
         } else if tlv.Type() == codec.T_KEYID_REST {
             // pass
         } else if tlv.Type() == codec.T_HASH_REST {
@@ -85,6 +96,7 @@ func (i Interest) Length() uint16 {
         length += i.contentId.Length() + 4
     }
     if i.dataPayload.Length() > 0 {
+        // length += 5 // for payload type and TLV header
         length += i.dataPayload.Length() + 4
     }
 
@@ -102,6 +114,7 @@ func (i Interest) Value() []byte  {
         value = append(value, e.EncodeTLV(i.contentId)...)
     }
     if i.dataPayload.Length() > 0 {
+        // XXX: append the payload type, encoded, here
         value = append(value, e.EncodeTLV(i.dataPayload)...)
     }
 
@@ -177,8 +190,8 @@ func (i Interest) Payload() payload.Payload {
     return i.dataPayload
 }
 
-func (i Interest) PayloadType() uint16 {
-    return codec.T_PAYLOADTYPE_DATA
+func (i Interest) PayloadType() uint8 {
+    return i.payloadType
 }
 
 func (i *Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {

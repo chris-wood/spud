@@ -11,7 +11,7 @@ import "github.com/chris-wood/spud/codec"
 type Content struct {
     name name.Name
     dataPayload payload.Payload
-    payloadType uint16
+    payloadType uint8
 
     // Validation information
     validationAlgorithm validation.ValidationAlgorithm
@@ -200,7 +200,7 @@ func (c Content) Payload() payload.Payload {
     return c.dataPayload
 }
 
-func (c Content) PayloadType() uint16 {
+func (c Content) PayloadType() uint8 {
     return c.payloadType
 }
 
