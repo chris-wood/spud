@@ -4,7 +4,7 @@ import "fmt"
 import "bytes"
 import "time"
 import "github.com/chris-wood/spud/util"
-import "github.com/chris-wood/spud/messages/name"
+// import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/messages/name"
@@ -22,7 +22,6 @@ import "encoding/binary"
 // import "golang.org/x/crypto/curve25519"
 
 // Extension keys into the encoder dictionary
-const _kName = "Name"
 const _kSourceChallenge = "SourceChallenge"
 const _kSourceToken = "SourceToken"
 const _kSourceProof = "SourceProof"
@@ -37,7 +36,7 @@ const _sourceChallengeSize = 16
 
 type KEX struct {
     messageType uint16
-    extensionMap map[string]interface{} // string keys to generic types
+    extensionMap map[string]KEXExtension
 }
 
 type kexError struct {
@@ -66,75 +65,71 @@ func createToken(key []byte, inputs... []byte) []byte {
 
 // Constructors
 
-func KEXHello(prefix name.Name) *KEX {
-    emap := make(map[string]interface{})
-    emap[_kName] = prefix
+func KEXHello() *KEX {
+    emap := make(map[string]KEXExtension)
 
     // Generate some random bytes
     bytes, err := util.GenerateRandomBytes(_sourceChallengeSize)
     if err != nil {
         return nil
     }
-    emap[_kSourceProof] = bytes
-    emap[_kSourceChallenge] = createChallenge(bytes)
+    emap[_kSourceProof] = KEXExtension{codec.T_KEX_SOURCE_PROOF, bytes}
+    emap[_kSourceChallenge] = KEXExtension{codec.T_KEX_SOURCE_CHALLENGE, createChallenge(bytes)}
 
     return &KEX{codec.T_KEX_BAREHELLO, emap}
 }
 
 func KEXHelloReject(hello *KEX, macKey []byte) *KEX {
-    emap := make(map[string]interface{})
+    emap := make(map[string]KEXExtension)
 
     // Timestamp
     now := time.Now().UnixNano() / int64(time.Millisecond)
     nowBytes := make([]byte, 8)
     binary.LittleEndian.PutUint64(nowBytes, uint64(now))
-    emap[_kTimestamp] = nowBytes
+    emap[_kTimestamp] = KEXExtension{codec.T_KEX_TIMESTAMP, nowBytes}
 
     // Source challenge
-    challenge := hello.extensionMap[_kSourceChallenge].([]byte)
+    challenge := hello.extensionMap[_kSourceChallenge]
     emap[_kSourceChallenge] = challenge
-    emap[_kSourceToken] = createToken(macKey, challenge, nowBytes)
+    emap[_kSourceToken] = KEXExtension{codec.T_KEX_SOURCE_TOKEN, createToken(macKey, challenge.ExtValue, nowBytes)}
 
     return &KEX{codec.T_KEX_REJECT, emap}
 }
 
 func KEXFullHello(bare, reject *KEX) *KEX {
-    emap := make(map[string]interface{})
+    emap := make(map[string]KEXExtension)
 
     // key share
     // curve25519 stuff
 
     // source token
-    sourceToken := reject.extensionMap[_kSourceToken].([]byte)
-    emap[_kSourceToken] = sourceToken
+    emap[_kSourceToken] = reject.extensionMap[_kSourceToken]
 
     // source proof
-    sourceProof := bare.extensionMap[_kSourceProof]
-    emap[_kSourceProof] = sourceProof
+    emap[_kSourceProof] = bare.extensionMap[_kSourceProof]
 
     // move challenge
     moveProof, _ := util.GenerateRandomBytes(_sourceChallengeSize)
-    emap[_kMoveProof] = moveProof
-    emap[_kMoveChallenge] = createChallenge(moveProof)
+    emap[_kMoveProof] = KEXExtension{codec.T_KEX_MOVE_PROOF, moveProof}
+    emap[_kMoveChallenge] = KEXExtension{codec.T_KEX_MOVE_CHALLENGE, createChallenge(moveProof)}
 
     // timestamp
-    timestamp := reject.extensionMap[_kTimestamp].([]byte)
-    emap[_kTimestamp] = timestamp
+    emap[_kTimestamp] = reject.extensionMap[_kTimestamp]
 
     return &KEX{codec.T_KEX_HELLO, emap}
 }
 
 func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
-    emap := make(map[string]interface{})
+    emap := make(map[string]KEXExtension)
 
     // re-compute the token to verify that it's correct
-    sourceProof := bare.extensionMap[_kSourceProof].([]byte)
-    sourceChallenge := createChallenge(sourceProof)
-    timestamp := hello.extensionMap[_kTimestamp].([]byte)
-    sourceToken := createToken(macKey, sourceChallenge, timestamp)
+    sourceProof := bare.extensionMap[_kSourceProof]
+    sourceChallenge := createChallenge(sourceProof.ExtValue)
+    timestamp := hello.extensionMap[_kTimestamp]
+    sourceToken := createToken(macKey, sourceChallenge, timestamp.ExtValue)
 
-    givenToken := hello.extensionMap[_kSourceToken].([]byte)
-    if bytes.Compare(sourceToken, givenToken) != 0 {
+    givenToken := hello.extensionMap[_kSourceToken]
+    if bytes.Compare(sourceToken, givenToken.ExtValue) != 0 {
         // XXX: error here
         return nil
     }
@@ -146,13 +141,13 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     // XXX
 
     // move token
-    moveChallenge := hello.extensionMap[_kMoveChallenge].([]byte)
-    moveToken := createToken(encKey, moveChallenge)
-    emap[_kMoveToken] = moveToken
+    moveChallenge := hello.extensionMap[_kMoveChallenge]
+    moveToken := createToken(encKey, moveChallenge.ExtValue)
+    emap[_kMoveToken] = KEXExtension{codec.T_KEX_MOVE_TOKEN, moveToken}
 
     // source token
     sessionID, _ := util.GenerateRandomBytes(_sourceChallengeSize)
-    emap[_kSessionID] = sessionID
+    emap[_kSessionID] = KEXExtension{codec.T_KEX_SESSION_ID, sessionID}
 
     return &KEX{codec.T_KEX_ACCEPT, emap}
 }
@@ -168,19 +163,44 @@ func (kex KEX) TypeString() string {
 }
 
 func (kex KEX) bareHelloValue() []byte {
-    return make([]byte, 0)
+    value := make([]byte, 0)
+
+    e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceChallenge])...)
+
+    return value
 }
 
 func (kex KEX) rejectValue() []byte {
-    return make([]byte, 0)
+    value := make([]byte, 0)
+
+    e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kTimestamp])...)
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceToken])...)
+
+    return value
 }
 
 func (kex KEX) helloValue() []byte {
-    return make([]byte, 0)
+    value := make([]byte, 0)
+
+    e := codec.Encoder{}
+    // XXX: key share!
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kTimestamp])...)
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceToken])...)
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceProof])...)
+
+    return value
 }
 
 func (kex KEX) acceptValue() []byte {
-    return make([]byte, 0)
+    value := make([]byte, 0)
+
+    e := codec.Encoder{}
+    // XXX: key share!
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kSessionID])...)
+
+    return value
 }
 
 func (kex KEX) Value() []byte  {
