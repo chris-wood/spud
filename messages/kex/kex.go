@@ -5,6 +5,7 @@ import "bytes"
 import "time"
 import "github.com/chris-wood/spud/util"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/messages/name"
 // import typedhash "github.com/chris-wood/spud/messages/hash"
@@ -35,7 +36,7 @@ const _kSessionID = "SessionID"
 const _sourceChallengeSize = 16
 
 type KEX struct {
-    messageType int 
+    messageType uint16
     extensionMap map[string]interface{} // string keys to generic types
 }
 
@@ -77,7 +78,7 @@ func KEXHello(prefix name.Name) *KEX {
     emap[_kSourceProof] = bytes
     emap[_kSourceChallenge] = createChallenge(bytes)
 
-    return &KEX{emap}
+    return &KEX{codec.T_KEX_BAREHELLO, emap}
 }
 
 func KEXHelloReject(hello *KEX, macKey []byte) *KEX {
@@ -94,7 +95,7 @@ func KEXHelloReject(hello *KEX, macKey []byte) *KEX {
     emap[_kSourceChallenge] = challenge
     emap[_kSourceToken] = createToken(macKey, challenge, nowBytes)
 
-    return &KEX{emap}
+    return &KEX{codec.T_KEX_REJECT, emap}
 }
 
 func KEXFullHello(bare, reject *KEX) *KEX {
@@ -120,7 +121,7 @@ func KEXFullHello(bare, reject *KEX) *KEX {
     timestamp := reject.extensionMap[_kTimestamp].([]byte)
     emap[_kTimestamp] = timestamp
 
-    return &KEX{emap}
+    return &KEX{codec.T_KEX_HELLO, emap}
 }
 
 func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
@@ -153,5 +154,5 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     sessionID, _ := util.GenerateRandomBytes(_sourceChallengeSize)
     emap[_kSessionID] = sessionID
 
-    return &KEX{emap}
+    return &KEX{codec.T_KEX_ACCEPT, emap}
 }

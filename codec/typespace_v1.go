@@ -39,7 +39,7 @@ const T_NAMESEG_APP4 uint16 = 0x1004
 const T_KEX_BAREHELLO uint16 = 0x0001
 const T_KEX_REJECT uint16 = 0x0002
 const T_KEX_HELLO uint16 = 0x0003
-const T_KEX_REJECT uint16 = 0x0004
+const T_KEX_ACCEPT uint16 = 0x0004
 
 // KEX extension types
 const T_KEX_SOURCE_CHALLENGE uint16 = 0x0001

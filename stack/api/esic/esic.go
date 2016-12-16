@@ -9,8 +9,10 @@ type CCNxESIC struct {
 
 func (n *CCNxESIC) Read() []byte {
     // XXX: do the handshake establishment here...
+    return nil
 }
 
-func (n *CCNxESIC) Write(data []byte) []byte {
+func (n *CCNxESIC) Write(data []byte) int {
     // XXX: put in interest and send
+    return 0
 }
