@@ -156,3 +156,103 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
 
     return &KEX{codec.T_KEX_ACCEPT, emap}
 }
+
+// TLV functions
+
+func (kex KEX) Type() uint16 {
+    return kex.messageType
+}
+
+func (kex KEX) TypeString() string {
+    return "KEX"
+}
+
+func (kex KEX) bareHelloValue() []byte {
+    return make([]byte, 0)
+}
+
+func (kex KEX) rejectValue() []byte {
+    return make([]byte, 0)
+}
+
+func (kex KEX) helloValue() []byte {
+    return make([]byte, 0)
+}
+
+func (kex KEX) acceptValue() []byte {
+    return make([]byte, 0)
+}
+
+func (kex KEX) Value() []byte  {
+    switch (kex.messageType) {
+    case codec.T_KEX_BAREHELLO:
+        return kex.bareHelloValue()
+    case codec.T_KEX_REJECT:
+        return kex.rejectValue()
+    case codec.T_KEX_HELLO:
+        return kex.helloValue()
+    case codec.T_KEX_ACCEPT:
+        return kex.acceptValue()
+    }
+    return nil
+}
+
+func (kex KEX) bareHelloLength() uint16 {
+    helloValue := kex.bareHelloValue()
+    return uint16(len(helloValue))
+}
+
+func (kex KEX) rejectLength() uint16 {
+    rejectValue := kex.rejectValue()
+    return uint16(len(rejectValue))
+}
+
+func (kex KEX) helloLength() uint16 {
+    helloValue := kex.helloValue()
+    return uint16(len(helloValue))
+}
+
+func (kex KEX) acceptLength() uint16 {
+    acceptValue := kex.acceptValue()
+    return uint16(len(acceptValue))
+}
+
+func (kex KEX) Length() uint16 {
+    switch (kex.messageType) {
+    case codec.T_KEX_BAREHELLO:
+        return kex.bareHelloLength()
+    case codec.T_KEX_REJECT:
+        return kex.rejectLength()
+    case codec.T_KEX_HELLO:
+        return kex.helloLength()
+    case codec.T_KEX_ACCEPT:
+        return kex.acceptLength()
+    }
+    return 0
+}
+
+func (kex KEX) bareHelloChildren() []codec.TLV {
+    return make([]codec.TLV, 0)
+}
+
+func (kex KEX) rejectChidlren() []codec.TLV {
+    return make([]codec.TLV, 0)
+}
+
+func (kex KEX) helloChildren() []codec.TLV {
+    return make([]codec.TLV, 0)
+}
+
+func (kex KEX) acceptChildren() []codec.TLV {
+    return make([]codec.TLV, 0)
+}
+
+func (kex KEX) Children() []codec.TLV {
+    children := make([]codec.TLV, 0)
+
+    // for _, child := range(n.Segments) {
+    //     children = append(children, child)
+    // }
+
+    return children
+}
