@@ -13,6 +13,7 @@ import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/messages/payload"
 // import "github.com/chris-wood/spud/messages/validation"
 
+import "crypto/rand"
 import "crypto/hmac"
 import "crypto/sha256"
 // import "encoding/base64"
@@ -20,6 +21,7 @@ import "encoding/binary"
 
 // XXX: use something in the standard crypto library
 // import "golang.org/x/crypto/curve25519"
+import "golang.org/x/crypto/nacl/box"
 
 // Extension keys into the encoder dictionary
 const _kSourceChallenge = "SourceChallenge"
@@ -30,6 +32,8 @@ const _kMoveChallenge = "MoveChallenge"
 const _kMoveProof = "MoveProof"
 const _kMoveToken = "MoveToken"
 const _kSessionID = "SessionID"
+const _kPrivateKeyShare = "PrivateKeyShare"
+const _kPublicKeyShare = "PublicKeyShare"
 
 // Digest size(s)
 const _sourceChallengeSize = 16
@@ -100,7 +104,12 @@ func KEXFullHello(bare, reject *KEX) *KEX {
     emap := make(map[string]KEXExtension)
 
     // key share
-    // curve25519 stuff
+    publicKey, privateKey, err := box.GenerateKey(rand.Reader)
+    if err != nil {
+        return nil
+    }
+    emap[_kPublicKeyShare] = KEXExtension{codec.T_KEX_KEYSHARE, publicKey[:]}
+    emap[_kPrivateKeyShare] = KEXExtension{0, privateKey[:]}
 
     // source token
     emap[_kSourceToken] = reject.extensionMap[_kSourceToken]
@@ -135,10 +144,12 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     }
 
     // key share
-    // XXX: curve25519
-
-    // certificate
-    // XXX
+    publicKey, privateKey, err := box.GenerateKey(rand.Reader)
+    if err != nil {
+        return nil
+    }
+    emap[_kPublicKeyShare] = KEXExtension{codec.T_KEX_KEYSHARE, publicKey[:]}
+    emap[_kPrivateKeyShare] = KEXExtension{0, privateKey[:]}
 
     // move token
     moveChallenge := hello.extensionMap[_kMoveChallenge]
@@ -229,10 +240,10 @@ func (kex KEX) helloValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
-    // XXX: key share!
     value = append(value, e.EncodeTLV(kex.extensionMap[_kTimestamp])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceToken])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceProof])...)
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kPublicKeyShare])...)
 
     return value
 }
@@ -241,8 +252,8 @@ func (kex KEX) acceptValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
-    // XXX: key share!
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSessionID])...)
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kPublicKeyShare])...)
 
     return value
 }
@@ -331,11 +342,15 @@ func (kex KEX) acceptChildren() []codec.TLV {
 }
 
 func (kex KEX) Children() []codec.TLV {
-    children := make([]codec.TLV, 0)
-
-    // for _, child := range(n.Segments) {
-    //     children = append(children, child)
-    // }
-
-    return children
+    switch (kex.messageType) {
+    case codec.T_KEX_BAREHELLO:
+        return kex.bareHelloChildren()
+    case codec.T_KEX_REJECT:
+        return kex.rejectChidlren()
+    case codec.T_KEX_HELLO:
+        return kex.helloChildren()
+    case codec.T_KEX_ACCEPT:
+        return kex.acceptChildren()
+    }
+    return make([]codec.TLV, 0)
 }

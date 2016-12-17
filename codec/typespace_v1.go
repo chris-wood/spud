@@ -50,6 +50,7 @@ const T_KEX_MOVE_TOKEN uint16 = 0x0005
 const T_KEX_MOVE_PROOF uint16 = 0x0006
 const T_KEX_SESSION_ID uint16 = 0x0007
 const T_KEX_TIMESTAMP uint16 = 0x0008
+const T_KEX_KEYSHARE uint16 = 0x0009
 
 // Payload type
 const T_PAYLOADTYPE_DATA uint8 = 0x00

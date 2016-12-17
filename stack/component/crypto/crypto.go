@@ -82,7 +82,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
         // }
 
         // XXX: move this code to a function
-        if msg.IsRequest() {
+        if msg.GetPacketType() == tlvCodec.T_INTEREST {
             c.pendingMap[msg.Identifier()] = msg
             // c.codecComponent.Enqueue(msg)
         }
@@ -171,7 +171,7 @@ func (c CryptoComponent) ProcessIngressMessages() {
         fmt.Println("Passing up: " + msg.Identifier())
 
         // Hand off the message to the request/response handler
-        if !msg.IsRequest() {
+        if msg.GetPacketType() != tlvCodec.T_INTEREST {
             go c.handleIngressResponse(msg)
         } else {
             go c.handleIngressRequest(msg)

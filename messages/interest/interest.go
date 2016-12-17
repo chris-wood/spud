@@ -182,8 +182,8 @@ func (i Interest) HashProtectedRegion(hasher hash.Hash) []byte {
     return hasher.Sum(nil)
 }
 
-func (i Interest) IsRequest() bool {
-    return true
+func (i Interest) GetPacketType() uint16 {
+    return codec.T_INTEREST
 }
 
 func (i Interest) Payload() payload.Payload {

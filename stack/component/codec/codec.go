@@ -107,7 +107,7 @@ func (c CodecComponent) ProcessIngressMessages() {
         match, isPresent := c.stackCache.Lookup(identity)
 
         // If the response is cached, just serve it
-        if isPresent && message.IsRequest() {
+        if isPresent && message.GetPacketType() == codec.T_INTEREST {
             c.connector.Write(match)
         } else if err == nil { // 3. Enqueue in the upstream (ingress) queue
             c.ingress <- message

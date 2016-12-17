@@ -17,7 +17,6 @@ func (e messageError) Error() string {
     return fmt.Sprintf("%s", e.prob)
 }
 
-// XXX: keep this clean
 type Message interface {
     // Messages can encode themselves
     Encode() []byte
@@ -41,10 +40,10 @@ type Message interface {
 
     // Finally, each message has a type associated with it
     // XXX: rename to "GetMessageType"
-    IsRequest() bool
+    // IsRequest() bool
 
     // XXX: implement these
-    // GetPacketType() int
+    GetPacketType() uint16
     // GetMessageType() int
 }
 

@@ -192,8 +192,8 @@ func (c Content) HashProtectedRegion(hasher hash.Hash) []byte {
     return hasher.Sum(nil)
 }
 
-func (c Content) IsRequest() bool {
-    return false
+func (c Content) GetPacketType() uint16 {
+    return codec.T_OBJECT
 }
 
 func (c Content) Payload() payload.Payload {

@@ -2,6 +2,7 @@ package adapter
 
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
+import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
@@ -49,7 +50,7 @@ func (n *NameAPI) process() {
     for ;; {
         msg := n.apiStack.Dequeue()
 
-        if msg.IsRequest() {
+        if msg.GetPacketType() == codec.T_INTEREST {
             // XXX: this needs to use LPM to identify the service prefix
             requestName := msg.Name()
             numSsegments := len(requestName.Segments)
