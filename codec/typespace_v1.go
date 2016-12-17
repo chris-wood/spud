@@ -12,7 +12,7 @@ const T_VALALG uint16 = 0x0003
 const T_VALPAYLOAD uint16 = 0x0004
 const T_MANIFEST uint16 = 0x0006
 
-// Message body
+// Message body containers
 const T_NAME uint16 = 0x0000
 const T_PAYLOAD uint16 = 0x0001
 const T_KEYID_REST uint16 = 0x0002

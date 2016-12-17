@@ -78,13 +78,13 @@ func (c CodecComponent) ProcessEgressMessages() {
             c.stackCache.Insert(msg.Identifier(), wireFormat)
             c.connector.Write(wireFormat)
         } else if messageType == codec.T_INTEREST {
-            _, found := c.stackPit.Lookup(msg.Identifier())
-            if !found {
-                c.stackPit.Insert(msg.Identifier(), msg) // XXX this check should be performed above to avoid unnecessary encoding
+            // _, found := c.stackPit.Lookup(msg.Identifier())
+            // if !found {
+                // c.stackPit.Insert(msg.Identifier(), msg) // XXX this check should be performed above to avoid unnecessary encoding
                 c.connector.Write(wireFormat)
-            } else {
+            // } else {
                 // don't insert, just aggregate...
-            }
+            // }
         }
     }
 }
@@ -103,13 +103,14 @@ func (c CodecComponent) ProcessIngressMessages() {
         message, err := messages.CreateFromTLV(decodedTlV)
 
         // Lookup the item in the cache (XXX: we should only do this if it's a request)
-        identity := message.Identifier()
-        match, isPresent := c.stackCache.Lookup(identity)
+        // identity := message.Identifier()
+        // match, isPresent := c.stackCache.Lookup(identity)
 
         // If the response is cached, just serve it
-        if isPresent && message.GetPacketType() == codec.T_INTEREST {
-            c.connector.Write(match)
-        } else if err == nil { // 3. Enqueue in the upstream (ingress) queue
+        // if isPresent && message.GetPacketType() == codec.T_INTEREST {
+            // c.connector.Write(match)
+        // } else
+        if err == nil { // 3. Enqueue in the upstream (ingress) queue
             c.ingress <- message
         } else {
             // drop

@@ -66,7 +66,6 @@ func addAuthenticator(msg messages.Message, proc processor.CryptoProcessor) (mes
 func (c CryptoComponent) ProcessEgressMessages() {
     for ;; {
         msg := <- c.egress
-        fmt.Println("Passing down: " + msg.Identifier())
 
         // Look up the processor based on the message
         // XXX: apply the LPM filter for the right processor here
@@ -168,7 +167,6 @@ func (c CryptoComponent) handleIngressResponse(msg messages.Message) {
 func (c CryptoComponent) ProcessIngressMessages() {
     for ;; {
         msg := c.codecComponent.Dequeue()
-        fmt.Println("Passing up: " + msg.Identifier())
 
         // Hand off the message to the request/response handler
         if msg.GetPacketType() != tlvCodec.T_INTEREST {

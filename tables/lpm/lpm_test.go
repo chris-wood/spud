@@ -14,8 +14,8 @@ func TestInsert(t *testing.T) {
         inputName name.Name
         inserted bool
     }{
-        {createName("/hello/world"), true},
-        {createName("/hello/*"), true},
+        { createName("/hello/world"), true},
+        { createName("/hello/*"), true},
     }
 
     kvs := LPM{}

@@ -20,7 +20,6 @@ import "crypto/sha256"
 import "encoding/binary"
 
 // XXX: use something in the standard crypto library
-// import "golang.org/x/crypto/curve25519"
 import "golang.org/x/crypto/nacl/box"
 
 // Extension keys into the encoder dictionary
@@ -132,20 +131,22 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     emap := make(map[string]KEXExtension)
 
     // re-compute the token to verify that it's correct
-    sourceProof := bare.extensionMap[_kSourceProof]
+    sourceProof := hello.extensionMap[_kSourceProof]
     sourceChallenge := createChallenge(sourceProof.ExtValue)
     timestamp := hello.extensionMap[_kTimestamp]
-    sourceToken := createToken(macKey, sourceChallenge, timestamp.ExtValue)
 
+    sourceToken := createToken(macKey, sourceChallenge, timestamp.ExtValue)
     givenToken := hello.extensionMap[_kSourceToken]
     if bytes.Compare(sourceToken, givenToken.ExtValue) != 0 {
         // XXX: error here
+        fmt.Println("MAC verification failed")
         return nil
     }
 
     // key share
     publicKey, privateKey, err := box.GenerateKey(rand.Reader)
     if err != nil {
+        fmt.Println("Could not create shares")
         return nil
     }
     emap[_kPublicKeyShare] = KEXExtension{codec.T_KEX_KEYSHARE, publicKey[:]}
@@ -163,26 +164,37 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     return &KEX{codec.T_KEX_ACCEPT, emap}
 }
 
+// Container functions
+func (k KEX) GetContainerType() uint16 {
+    return codec.T_KEX
+}
+
+func (k KEX) GetContainerValue() interface{} {
+    return k
+}
+
 // TLV functions
 
 func (kex KEX) Type() uint16 {
-    return kex.messageType
+    return codec.T_KEX
 }
 
 func (kex KEX) TypeString() string {
     return "KEX"
 }
 
-func CreateFromTLV(kexTLV codec.TLV) (KEX, error) {
-    var result KEX
+func (kex KEX) String() string {
+    return kex.TypeString()
+}
 
+func CreateFromTLV(kexTLV codec.TLV) (*KEX, error) {
     emap := make(map[string]KEXExtension)
     kexType := kexTLV.Type()
 
     for _, child := range(kexTLV.Children()) {
         extension, err := CreateExtensionFromTLV(child)
         if err != nil {
-            return result, err
+            return nil, err
         }
 
         // Drop the extension into the right slot
@@ -214,7 +226,7 @@ func CreateFromTLV(kexTLV codec.TLV) (KEX, error) {
         }
     }
 
-    return KEX{kexType, emap}, nil
+    return &KEX{kexType, emap}, nil
 }
 
 func (kex KEX) bareHelloValue() []byte {
@@ -353,4 +365,13 @@ func (kex KEX) Children() []codec.TLV {
         return kex.acceptChildren()
     }
     return make([]codec.TLV, 0)
+}
+
+// KEX API
+func (k KEX) GetPublicKeyShare() []byte {
+    return k.extensionMap[_kPublicKeyShare].ExtValue
+}
+
+func (k KEX) GetPrivateKeyShare() []byte {
+    return k.extensionMap[_kPrivateKeyShare].ExtValue
 }

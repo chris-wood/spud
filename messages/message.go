@@ -38,11 +38,11 @@ type Message interface {
     GetValidationAlgorithm() validation.ValidationAlgorithm
     GetValidationPayload() validation.ValidationPayload
 
-    // Finally, each message has a type associated with it
-    // XXX: rename to "GetMessageType"
-    // IsRequest() bool
+    // Generic slot for containers
+    AddContainer(container codec.TLV)
+    GetContainer(containerType uint16) (codec.TLV, error)
 
-    // XXX: implement these
+    // Type APIs
     GetPacketType() uint16
     // GetMessageType() int
 }

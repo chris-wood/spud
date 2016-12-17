@@ -3,7 +3,9 @@ package content
 import "fmt"
 import "hash"
 import "crypto/sha256"
+
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/messages/kex"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
@@ -12,6 +14,8 @@ type Content struct {
     name name.Name
     dataPayload payload.Payload
     payloadType uint8
+
+    containers []codec.TLV
 
     // Validation information
     validationAlgorithm validation.ValidationAlgorithm
@@ -28,13 +32,18 @@ func (e contentError) Error() string {
 
 // Constructors
 
+func CreateWithName(stubName name.Name) *Content {
+    var dataPayload payload.Payload
+    return &Content{name: stubName, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
+}
+
 func CreateWithPayload(dataPayload payload.Payload) *Content {
     var name name.Name
-    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA}
+    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
 func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Content {
-    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA}
+    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
@@ -53,6 +62,8 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
     var validationPayload validation.ValidationPayload
     var err error
 
+    containers := make([]codec.TLV, 0)
+
     for _, tlv := range(topLevelTLV.Children()) {
         if tlv.Type() == codec.T_NAME {
             contentName, err = name.CreateFromTLV(tlv)
@@ -61,6 +72,12 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
             }
         } else if tlv.Type() == codec.T_PAYLOAD {
             dataPayload = payload.Create(tlv.Value())
+        } else if tlv.Type() == codec.T_KEX {
+            kex, err := kex.CreateFromTLV(tlv)
+            if err != nil {
+                return nil, contentError{"Unable to decode the KEX TLV"}
+            }
+            containers = append(containers, kex)
         } else if tlv.Type() == codec.T_VALALG {
             validationAlgorithm, err = validation.CreateFromTLV(tlv)
             if err != nil {
@@ -73,7 +90,24 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
         }
     }
 
-    return &Content{name: contentName, dataPayload: dataPayload, validationAlgorithm: validationAlgorithm, validationPayload: validationPayload}, nil
+    return &Content{name: contentName, dataPayload: dataPayload, validationAlgorithm: validationAlgorithm,
+        validationPayload: validationPayload, containers: containers}, nil
+}
+
+// Containers
+
+func (c *Content) AddContainer(container codec.TLV) {
+    c.containers = append(c.containers, container)
+}
+
+func (c *Content) GetContainer(containerType uint16) (codec.TLV, error) {
+    var container codec.TLV
+    for _, test := range(c.containers) {
+        if test.Type() == containerType {
+            return test, nil
+        }
+    }
+    return container, contentError{"No such container"}
 }
 
 // TLV functions
@@ -105,6 +139,9 @@ func (c Content) Length() uint16 {
         length += c.validationPayload.Length() + 4
     }
 
+    for _, container := range(c.containers) {
+        length += container.Length() + 4
+    }
 
     return length
 }
@@ -129,11 +166,18 @@ func (c Content) Value() []byte {
         value = append(value, e.EncodeTLV(c.validationPayload)...)
     }
 
+    for _, container := range(c.containers) {
+        value = append(value, e.EncodeTLV(container)...)
+    }
+
     return value
 }
 
 func (c Content) Children() []codec.TLV {
     children := []codec.TLV{c.name, c.dataPayload, c.validationAlgorithm, c.validationPayload}
+    for _, container := range(c.containers) {
+        children = append(children, container)
+    }
     return children
 }
 

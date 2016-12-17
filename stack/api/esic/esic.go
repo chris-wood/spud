@@ -1,18 +1,18 @@
 package esic
 
-type CCNxESIC struct {
+type ESIC struct {
     writeEncKey []byte
     writeMacKey []byte
     readEncKey []byte
     readMacKey []byte
 }
 
-func (n *CCNxESIC) Read() []byte {
+func (n *ESIC) Read() []byte {
     // XXX: do the handshake establishment here...
     return nil
 }
 
-func (n *CCNxESIC) Write(data []byte) int {
+func (n *ESIC) Write(data []byte) int {
     // XXX: put in interest and send
     return 0
 }

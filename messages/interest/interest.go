@@ -19,6 +19,9 @@ type Interest struct {
     payloadType uint8
     dataPayload payload.Payload
 
+    // codec.TLVs
+    containers []codec.TLV
+
     // KEX signalling and encryption information
     kexMessage kex.KEX
 
@@ -38,7 +41,7 @@ func (e interestError) Error() string {
 // Constructors
 
 func CreateWithName(name name.Name) *Interest {
-    return &Interest{name: name}
+    return &Interest{name: name, containers: make([]codec.TLV, 0)}
 }
 
 // func CreateWithNameAndPayload(name *name.Name, payload []byte) *Interest {
@@ -46,7 +49,7 @@ func CreateWithName(name name.Name) *Interest {
 // }
 
 func CreateFromLink(link link.Link) *Interest {
-    return &Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID()}
+    return &Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID(), containers: make([]codec.TLV, 0)}
 }
 
 func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
@@ -54,12 +57,20 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
     var interestName name.Name
     var err error
 
+    containers := make([]codec.TLV, 0)
+
     for _, tlv := range(tlvs.Children()) {
         if tlv.Type() == codec.T_NAME {
             interestName, err = name.CreateFromTLV(tlv)
             if err != nil {
                 return &interest, err
             }
+        } else if tlv.Type() == codec.T_KEX {
+            kex, err := kex.CreateFromTLV(tlv)
+            if err != nil {
+                return nil, interestError{"Unable to decode the KEX TLV"}
+            }
+            containers = append(containers, kex)
         } else if tlv.Type() == codec.T_PAYLDTYPE {
             // pass
         } else if tlv.Type() == codec.T_PAYLOAD {
@@ -73,7 +84,23 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
         }
     }
 
-    return &Interest{name: interestName}, nil
+    return &Interest{name: interestName, containers: containers}, nil
+}
+
+// codec.TLVs
+
+func (i *Interest) AddContainer(container codec.TLV) {
+    i.containers = append(i.containers, container)
+}
+
+func (i *Interest) GetContainer(containerType uint16) (codec.TLV, error) {
+    var container codec.TLV
+    for _, test := range(i.containers) {
+        if test.Type() == containerType {
+            return test, nil
+        }
+    }
+    return container, interestError{"No such container"}
 }
 
 // TLV functions
@@ -99,6 +126,9 @@ func (i Interest) Length() uint16 {
         // length += 5 // for payload type and TLV header
         length += i.dataPayload.Length() + 4
     }
+    for _, container := range(i.containers) {
+        length += container.Length() + 4
+    }
 
     return length
 }
@@ -117,12 +147,18 @@ func (i Interest) Value() []byte  {
         // XXX: append the payload type, encoded, here
         value = append(value, e.EncodeTLV(i.dataPayload)...)
     }
+    for _, container := range(i.containers) {
+        value = append(value, e.EncodeTLV(container)...)
+    }
 
     return value
 }
 
 func (i Interest) Children() []codec.TLV  {
     children := []codec.TLV{i.name, i.keyId, i.contentId}
+    for _, container := range(i.containers) {
+        children = append(children, container)
+    }
     return children
 }
 
