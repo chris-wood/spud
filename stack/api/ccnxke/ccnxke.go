@@ -34,8 +34,6 @@ func NewCCNxKEAPI(s stack.Stack) *CCNxKEAPI {
 }
 
 func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
-    fmt.Println("Starting the handshake...")
-
     randomPrefix, _ := util.GenerateRandomString(16)
     bareHelloName, _ := prefix.AppendComponent(randomPrefix)
 
@@ -45,13 +43,9 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     bareHelloRequest.AddContainer(bareHello)
     api.kexStack.Enqueue(bareHelloRequest)
 
-    fmt.Println(bareHelloRequest)
-
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
     reply := api.kexStack.Dequeue()
-
-    fmt.Println("Got the reject, generating the full hello")
 
     reject, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
@@ -65,16 +59,11 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 
     helloRequest := interest.CreateWithName(helloName)
     helloRequest.AddContainer(hello)
-    fmt.Println("Sending down the full hello and then sleeping...")
     api.kexStack.Enqueue(helloRequest)
-
-    fmt.Println(helloRequest)
 
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
     reply = api.kexStack.Dequeue()
-
-    fmt.Println("Got the accept, completing the handshake")
 
     accept, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
@@ -82,9 +71,8 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
         return
     }
     acceptKEX := accept.(*kex.KEX)
-    fmt.Println(acceptKEX.GetContainerType())
 
-    fmt.Println("Consumer: At KDF stage")
+    fmt.Printf("Consumer: ")
 
     var sharedKey [32]byte
     var peerPublic [32]byte
@@ -104,15 +92,54 @@ func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
 
 func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback, macKey, encKey []byte) {
     for ;; {
-        // Wait for a hello
         request := api.kexStack.Dequeue()
         if !prefix.IsPrefix(request.Name()) {
             break
         }
 
-        // Handle this message
-        kexContainer, err := request.GetContainer(codec.T_KEX)
-        
+        kexTLV, _ := request.GetContainer(codec.T_KEX)
+        kexContainer := kexTLV.(*kex.KEX)
+
+        switch kexContainer.GetMessageType() {
+        case codec.T_KEX_BAREHELLO:
+            reject := kex.KEXHelloReject(kexContainer, macKey)
+            rejectResponse := content.CreateWithName(request.Name())
+            rejectResponse.AddContainer(reject)
+            api.kexStack.Enqueue(rejectResponse)
+            break
+
+        case codec.T_KEX_HELLO:
+            accept, err := kex.KEXHelloAccept(kexContainer, macKey, encKey)
+            if err != nil {
+                fmt.Println(err)
+                break
+            }
+
+            acceptResponse := content.CreateWithName(request.Name())
+            acceptResponse.AddContainer(accept)
+            api.kexStack.Enqueue(acceptResponse)
+
+            // XXX: go to the KDF step
+
+            fmt.Printf("Producer: ")
+            var sharedKey [32]byte
+            var peerPublic [32]byte
+            var privateKey [32]byte
+            copy(peerPublic[:], kexContainer.GetPublicKeyShare())
+            copy(privateKey[:], accept.GetPrivateKeyShare())
+            box.Precompute(&sharedKey, &peerPublic, &privateKey)
+
+            fmt.Println(sharedKey)
+
+            break
+
+        case codec.T_KEX_REJECT:
+        case codec.T_KEX_ACCEPT:
+            // invalid message type to be received here...
+            break
+        }
+
+        time.Sleep(100 * time.Millisecond)
 
         // bareHello, err := request.GetContainer(codec.T_KEX)
         // if err != nil {
@@ -123,7 +150,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
         // rejectResponse := content.CreateWithName(request.Name())
         // rejectResponse.AddContainer(reject)
         // api.kexStack.Enqueue(rejectResponse)
-        //
+
         // fmt.Println("sending down the rejection message and then sleeping")
         //
         // // Wait for the full hello to come back

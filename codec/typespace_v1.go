@@ -42,6 +42,7 @@ const T_KEX_HELLO uint16 = 0x0003
 const T_KEX_ACCEPT uint16 = 0x0004
 
 // KEX extension types
+const T_KEX_MESSAGE_TYPE uint16 = 0x0000
 const T_KEX_SOURCE_CHALLENGE uint16 = 0x0001
 const T_KEX_SOURCE_TOKEN uint16 = 0x0002
 const T_KEX_SOURCE_PROOF uint16 = 0x0003

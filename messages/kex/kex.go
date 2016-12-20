@@ -23,6 +23,7 @@ import "encoding/binary"
 import "golang.org/x/crypto/nacl/box"
 
 // Extension keys into the encoder dictionary
+const _kMessageType = "MessageType"
 const _kSourceChallenge = "SourceChallenge"
 const _kSourceToken = "SourceToken"
 const _kSourceProof = "SourceProof"
@@ -79,6 +80,10 @@ func KEXHello() *KEX {
     emap[_kSourceProof] = KEXExtension{codec.T_KEX_SOURCE_PROOF, bytes}
     emap[_kSourceChallenge] = KEXExtension{codec.T_KEX_SOURCE_CHALLENGE, createChallenge(bytes)}
 
+    typeContainer := make([]byte, 2)
+    binary.BigEndian.PutUint16(typeContainer, codec.T_KEX_BAREHELLO)
+    emap[_kMessageType] = KEXExtension{codec.T_KEX_MESSAGE_TYPE, typeContainer}
+
     return &KEX{codec.T_KEX_BAREHELLO, emap}
 }
 
@@ -95,6 +100,10 @@ func KEXHelloReject(hello *KEX, macKey []byte) *KEX {
     challenge := hello.extensionMap[_kSourceChallenge]
     emap[_kSourceChallenge] = challenge
     emap[_kSourceToken] = KEXExtension{codec.T_KEX_SOURCE_TOKEN, createToken(macKey, challenge.ExtValue, nowBytes)}
+
+    typeContainer := make([]byte, 2)
+    binary.BigEndian.PutUint16(typeContainer, codec.T_KEX_REJECT)
+    emap[_kMessageType] = KEXExtension{codec.T_KEX_MESSAGE_TYPE, typeContainer}
 
     return &KEX{codec.T_KEX_REJECT, emap}
 }
@@ -124,10 +133,14 @@ func KEXFullHello(bare, reject *KEX) *KEX {
     // timestamp
     emap[_kTimestamp] = reject.extensionMap[_kTimestamp]
 
+    typeContainer := make([]byte, 2)
+    binary.BigEndian.PutUint16(typeContainer, codec.T_KEX_HELLO)
+    emap[_kMessageType] = KEXExtension{codec.T_KEX_MESSAGE_TYPE, typeContainer}
+
     return &KEX{codec.T_KEX_HELLO, emap}
 }
 
-func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
+func KEXHelloAccept(hello *KEX, macKey, encKey []byte) (*KEX, error) {
     emap := make(map[string]KEXExtension)
 
     // re-compute the token to verify that it's correct
@@ -138,16 +151,13 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     sourceToken := createToken(macKey, sourceChallenge, timestamp.ExtValue)
     givenToken := hello.extensionMap[_kSourceToken]
     if bytes.Compare(sourceToken, givenToken.ExtValue) != 0 {
-        // XXX: error here
-        fmt.Println("MAC verification failed")
-        return nil
+        return nil, kexError{"Token verification failed."}
     }
 
     // key share
     publicKey, privateKey, err := box.GenerateKey(rand.Reader)
     if err != nil {
-        fmt.Println("Could not create shares")
-        return nil
+        return nil, kexError{"Key share generatio failed."}
     }
     emap[_kPublicKeyShare] = KEXExtension{codec.T_KEX_KEYSHARE, publicKey[:]}
     emap[_kPrivateKeyShare] = KEXExtension{0, privateKey[:]}
@@ -161,7 +171,11 @@ func KEXHelloAccept(bare, reject, hello *KEX, macKey, encKey []byte) *KEX {
     sessionID, _ := util.GenerateRandomBytes(_sourceChallengeSize)
     emap[_kSessionID] = KEXExtension{codec.T_KEX_SESSION_ID, sessionID}
 
-    return &KEX{codec.T_KEX_ACCEPT, emap}
+    typeContainer := make([]byte, 2)
+    binary.BigEndian.PutUint16(typeContainer, codec.T_KEX_ACCEPT)
+    emap[_kMessageType] = KEXExtension{codec.T_KEX_MESSAGE_TYPE, typeContainer}
+
+    return &KEX{codec.T_KEX_ACCEPT, emap}, nil
 }
 
 // Container functions
@@ -189,8 +203,8 @@ func (kex KEX) String() string {
 
 func CreateFromTLV(kexTLV codec.TLV) (*KEX, error) {
     emap := make(map[string]KEXExtension)
-    kexType := kexTLV.Type()
 
+    messageType := codec.T_KEX_BAREHELLO
     for _, child := range(kexTLV.Children()) {
         extension, err := CreateExtensionFromTLV(child)
         if err != nil {
@@ -199,6 +213,10 @@ func CreateFromTLV(kexTLV codec.TLV) (*KEX, error) {
 
         // Drop the extension into the right slot
         switch (extension.ExtType) {
+        case codec.T_KEX_MESSAGE_TYPE:
+            emap[_kMessageType] = extension
+            messageType = binary.BigEndian.Uint16(extension.Value())
+            break
         case codec.T_KEX_SOURCE_CHALLENGE:
             emap[_kSourceChallenge] = extension
             break
@@ -226,13 +244,14 @@ func CreateFromTLV(kexTLV codec.TLV) (*KEX, error) {
         }
     }
 
-    return &KEX{kexType, emap}, nil
+    return &KEX{messageType, emap}, nil
 }
 
 func (kex KEX) bareHelloValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kMessageType])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceChallenge])...)
 
     return value
@@ -242,6 +261,7 @@ func (kex KEX) rejectValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kMessageType])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kTimestamp])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceToken])...)
 
@@ -252,6 +272,7 @@ func (kex KEX) helloValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kMessageType])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kTimestamp])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceToken])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSourceProof])...)
@@ -264,6 +285,7 @@ func (kex KEX) acceptValue() []byte {
     value := make([]byte, 0)
 
     e := codec.Encoder{}
+    value = append(value, e.EncodeTLV(kex.extensionMap[_kMessageType])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kSessionID])...)
     value = append(value, e.EncodeTLV(kex.extensionMap[_kPublicKeyShare])...)
 
@@ -321,6 +343,7 @@ func (kex KEX) Length() uint16 {
 func (kex KEX) bareHelloChildren() []codec.TLV {
     children := make([]codec.TLV, 0)
 
+    children = append(children, kex.extensionMap[_kMessageType])
     children = append(children, kex.extensionMap[_kSourceChallenge])
 
     return children
@@ -329,6 +352,7 @@ func (kex KEX) bareHelloChildren() []codec.TLV {
 func (kex KEX) rejectChidlren() []codec.TLV {
     children := make([]codec.TLV, 0)
 
+    children = append(children, kex.extensionMap[_kMessageType])
     children = append(children, kex.extensionMap[_kTimestamp])
     children = append(children, kex.extensionMap[_kSourceToken])
 
@@ -338,6 +362,7 @@ func (kex KEX) rejectChidlren() []codec.TLV {
 func (kex KEX) helloChildren() []codec.TLV {
     children := make([]codec.TLV, 0)
 
+    children = append(children, kex.extensionMap[_kMessageType])
     children = append(children, kex.extensionMap[_kTimestamp])
     children = append(children, kex.extensionMap[_kSourceToken])
     children = append(children, kex.extensionMap[_kSourceProof])
@@ -348,6 +373,7 @@ func (kex KEX) helloChildren() []codec.TLV {
 func (kex KEX) acceptChildren() []codec.TLV {
     children := make([]codec.TLV, 0)
 
+    children = append(children, kex.extensionMap[_kMessageType])
     children = append(children, kex.extensionMap[_kSessionID])
 
     return children
@@ -374,4 +400,8 @@ func (k KEX) GetPublicKeyShare() []byte {
 
 func (k KEX) GetPrivateKeyShare() []byte {
     return k.extensionMap[_kPrivateKeyShare].ExtValue
+}
+
+func (k KEX) GetMessageType() uint16 {
+    return k.messageType
 }
