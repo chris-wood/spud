@@ -131,12 +131,35 @@ func (n Name) Prefix(num int) string {
     return prefix
 }
 
+func (n Name) IsPrefix(other Name) bool {
+    if len(other.Segments) < len(n.Segments) {
+        return false
+    }
+
+    for i := len(n.Segments) - 1; i >= 0; i-- {
+        if n.Segments[i] != other.Segments[i] {
+            return false
+        }
+    }
+
+    return true
+}
+
 func (n Name) SegmentStrings() []string {
     segments := make([]string, 0)
     for _, v := range(n.Segments) {
         segments = append(segments, v.String())
     }
     return segments
+}
+
+func (n Name) AppendComponent(component string) (Name, error) {
+    var newName Name
+    segment, err := name_segment.Parse(component)
+    if err != nil {
+        return newName, err
+    }
+    return Name{Segments: append(n.Segments, segment)}, nil
 }
 
 // String functions

@@ -36,11 +36,16 @@ func NewCCNxKEAPI(s stack.Stack) *CCNxKEAPI {
 func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     fmt.Println("Starting the handshake...")
 
+    randomPrefix, _ := util.GenerateRandomString(16)
+    bareHelloName, _ := prefix.AppendComponent(randomPrefix)
+
     // Send the bare hello
     bareHello := kex.KEXHello()
-    bareHelloRequest := interest.CreateWithName(prefix)
+    bareHelloRequest := interest.CreateWithName(bareHelloName)
     bareHelloRequest.AddContainer(bareHello)
     api.kexStack.Enqueue(bareHelloRequest)
+
+    fmt.Println(bareHelloRequest)
 
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
@@ -54,10 +59,16 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
         return
     }
     hello := kex.KEXFullHello(bareHello, reject.(*kex.KEX))
-    helloRequest := interest.CreateWithName(prefix)
+
+    randomPrefix, _ = util.GenerateRandomString(16)
+    helloName, _ := prefix.AppendComponent(randomPrefix)
+
+    helloRequest := interest.CreateWithName(helloName)
     helloRequest.AddContainer(hello)
     fmt.Println("Sending down the full hello and then sleeping...")
     api.kexStack.Enqueue(helloRequest)
+
+    fmt.Println(helloRequest)
 
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
@@ -92,59 +103,64 @@ func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
 }
 
 func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback, macKey, encKey []byte) {
-    // for ;; {
+    for ;; {
         // Wait for a hello
-        fmt.Println("Servicing!")
         request := api.kexStack.Dequeue()
-        fmt.Println("Got the bare hello, generating the reject")
-
-        bareHello, err := request.GetContainer(codec.T_KEX)
-        if err != nil {
-            fmt.Println("Error: no KEX container in the BARE HELLO interest")
-            return
+        if !prefix.IsPrefix(request.Name()) {
+            break
         }
-        reject := kex.KEXHelloReject(bareHello.(*kex.KEX), macKey)
-        rejectResponse := content.CreateWithName(request.Name())
-        rejectResponse.AddContainer(reject)
-        api.kexStack.Enqueue(rejectResponse)
 
-        fmt.Println("sending down the rejection message and then sleeping")
+        // Handle this message
+        kexContainer, err := request.GetContainer(codec.T_KEX)
+        
 
-        // Wait for the full hello to come back
-        time.Sleep(100 * time.Millisecond)
-        request = api.kexStack.Dequeue()
+        // bareHello, err := request.GetContainer(codec.T_KEX)
+        // if err != nil {
+        //     fmt.Println("Error: no KEX container in the BARE HELLO interest")
+        //     return
+        // }
+        // reject := kex.KEXHelloReject(bareHello.(*kex.KEX), macKey)
+        // rejectResponse := content.CreateWithName(request.Name())
+        // rejectResponse.AddContainer(reject)
+        // api.kexStack.Enqueue(rejectResponse)
+        //
+        // fmt.Println("sending down the rejection message and then sleeping")
+        //
+        // // Wait for the full hello to come back
+        // time.Sleep(100 * time.Millisecond)
+        // request = api.kexStack.Dequeue()
+        //
+        // fmt.Println("Got the full hello, completing the handshake")
+        //
+        // hello, err := request.GetContainer(codec.T_KEX)
+        // if err != nil {
+        //     fmt.Println("Error: no KEX container in the HELLO interest")
+        //     return
+        // }
+        // fmt.Println("generating the accept")
+        // accept := kex.KEXHelloAccept(bareHello.(*kex.KEX), reject, hello.(*kex.KEX), macKey, encKey)
+        // if accept == nil {
+        //     // XXX: implement better recovery here
+        //     fmt.Println("recover")
+        // }
+        // acceptResponse := content.CreateWithName(request.Name())
+        // acceptResponse.AddContainer(accept)
+        //
+        // api.kexStack.Enqueue(acceptResponse)
+        //
+        // // Create the session and give it to the callback
+        // // XXX
+        // fmt.Println("Producer: At KDF stage")
+        // var sharedKey [32]byte
+        // var peerPublic [32]byte
+        // var privateKey [32]byte
+        // helloKex := hello.(*kex.KEX)
+        // copy(peerPublic[:], helloKex.GetPublicKeyShare())
+        // copy(privateKey[:], accept.GetPrivateKeyShare())
+        // box.Precompute(&sharedKey, &peerPublic, &privateKey)
+        //
+        // fmt.Println(sharedKey)
 
-        fmt.Println("Got the full hello, completing the handshake")
 
-        hello, err := request.GetContainer(codec.T_KEX)
-        if err != nil {
-            fmt.Println("Error: no KEX container in the HELLO interest")
-            return
-        }
-        fmt.Println("generating the accept")
-        accept := kex.KEXHelloAccept(bareHello.(*kex.KEX), reject, hello.(*kex.KEX), macKey, encKey)
-        if accept == nil {
-            // XXX: implement better recovery here
-            fmt.Println("recover")
-        }
-        acceptResponse := content.CreateWithName(request.Name())
-        acceptResponse.AddContainer(accept)
-
-        api.kexStack.Enqueue(acceptResponse)
-
-        // Create the session and give it to the callback
-        // XXX
-        fmt.Println("Producer: At KDF stage")
-        var sharedKey [32]byte
-        var peerPublic [32]byte
-        var privateKey [32]byte
-        helloKex := hello.(*kex.KEX)
-        copy(peerPublic[:], helloKex.GetPublicKeyShare())
-        copy(privateKey[:], accept.GetPrivateKeyShare())
-        box.Precompute(&sharedKey, &peerPublic, &privateKey)
-
-        fmt.Println(sharedKey)
-
-
-    // }
+    }
 }
