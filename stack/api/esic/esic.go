@@ -1,5 +1,7 @@
 package esic
 
+import "fmt"
+
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/codec"
@@ -20,7 +22,7 @@ type ESIC struct {
 
     prefixTable lpm.LPM
     pendingMap map[string]ResponseCallback
-    apiStack stack.Stack
+    apiStack *stack.Stack
 }
 
 type RequestCallback func(string, []byte) []byte
@@ -28,7 +30,7 @@ type ResponseCallback func([]byte)
 
 // XXX: session creation
 
-func NewESIC(masterSecret []byte, sessionID string) *ESIC {
+func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
     esic := ESIC{
         sessionID: sessionID,
         counter: 0,
@@ -36,6 +38,8 @@ func NewESIC(masterSecret []byte, sessionID string) *ESIC {
         writeEncKey: masterSecret,
         readMacKey: masterSecret,
         readEncKey: masterSecret,
+        pendingMap: make(map[string]ResponseCallback),
+        apiStack: stack,
     }
 
     // XXX: invoke the process function here
@@ -43,14 +47,46 @@ func NewESIC(masterSecret []byte, sessionID string) *ESIC {
     return &esic
 }
 
-func (n *ESIC) Serve(prefix string, sessionID string, callback RequestCallback) {
+func (n *ESIC) Serve(prefix string, callback RequestCallback) {
     // XX store the prefix, callback tuple in the map
     // n.prefixMap[prefix] = callback
-    prefixName, err := name.Parse(prefix)
-    if err == nil {
-        nameComponents := prefixName.SegmentStrings()
-        n.prefixTable.Insert(nameComponents, callback)
-    }
+    // prefixName, err := name.Parse(prefix)
+    // if err == nil {
+        // nameComponents := prefixName.SegmentStrings()
+        // n.prefixTable.Insert(nameComponents, callback)
+        n.apiStack.Service(prefix, func(msg messages.Message) {
+            fmt.Println("ESIC producer handling interest:", msg.Identifier())
+            encapPayload := msg.Payload().Value()
+            // XXX: decrypt the payload
+
+            d := codec.Decoder{}
+            decodedTlV := d.Decode(encapPayload)
+            if len(decodedTlV) > 1 {
+                return // there should be only one thing encapsulated -- a piece of data
+            }
+            fmt.Println(encapPayload)
+            responseMsg, err := messages.CreateFromTLV(decodedTlV)
+            if err != nil {
+                return  // handle this as needed
+            }
+
+            data := callback(prefix, responseMsg.Payload().Value())
+            dataPayload := payload.Create(data)
+            response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
+
+            // Encode and encrypt the content response
+            e := codec.Encoder{}
+            encodedResponse := e.EncodeTLV(response)
+            // XXX: encrypt the response
+
+            // Encap the response and send it downstream
+            wrappedPayload := payload.Create(encodedResponse)
+            encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
+
+            // n.apiStack.Enqueue(encapResponse)
+            n.apiStack.Enqueue(encapResponse)
+        })
+    // }
 }
 
 func (n *ESIC) Get(nameString string, callback ResponseCallback) {
@@ -68,9 +104,10 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         encapPayload := payload.Create(encodedRequest)
         encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
 
-        n.pendingMap[encapInterest.Identifier()] = callback
+        // n.pendingMap[encapInterest.Identifier()] = callback
         // n.apiStack.Enqueue(encapInterest)
 
+        fmt.Println("Calling stack.Get")
         n.apiStack.Get(encapInterest, func(msg messages.Message) {
             encapPayload := msg.Payload().Value()
             // XXX: decrypt the payload
@@ -80,6 +117,9 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
             if len(decodedTlV) > 1 {
                 return // there should be only one thing encapsulated -- a piece of data
             }
+
+            fmt.Println("Consumer is decoding the response...")
+            fmt.Println(encapPayload)
             responseMsg, err := messages.CreateFromTLV(decodedTlV)
             if err != nil {
                 return  // handle this as needed

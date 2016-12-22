@@ -3,7 +3,9 @@ package stack
 // import "fmt"
 
 import tlvCodec "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/messages"
+import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component/connector"
@@ -25,8 +27,8 @@ type Component interface {
 type Stack struct {
     components []Component
     pendingMap map[string]MessageCallback
-
     pendingQueue chan messages.Message
+    prefixTable lpm.LPM
 }
 
 func (s *Stack) Enqueue(msg messages.Message) {
@@ -42,18 +44,19 @@ func (s *Stack) Get(msg messages.Message, callback MessageCallback) {
         return
     }
 
-    // Register a callback for this message
-    // XXX
+    // Register the callback
+    s.pendingMap[msg.Identifier()] = callback
 
     // Enqueue the message into the top of the stack
     s.components[0].Enqueue(msg)
 }
 
-func (s *Stack) Put(msg messages.Message) {
-    if (msg.GetPacketType() == tlvCodec.T_INTEREST) {
-        return
+func (s *Stack) Service(nameString string, callback MessageCallback) {
+    prefixName, err := name.Parse(nameString)
+    if err == nil {
+        nameComponents := prefixName.SegmentStrings()
+        s.prefixTable.Insert(nameComponents, callback)
     }
-    s.components[0].Enqueue(msg)
 }
 
 func (s *Stack) processInputQueue() {
@@ -61,13 +64,47 @@ func (s *Stack) processInputQueue() {
         // Dequeue messages as they arrive
         msg := s.components[0].Dequeue()
 
-        // Check to see if there's a pending callback
-        // XXX
+        switch (msg.GetPacketType()) {
+        case tlvCodec.T_INTEREST:
+            requestName := msg.Name()
+            numSsegments := len(requestName.Segments)
 
-        // Nope -- enqueue the message in the pending queue to free up
-        // space in the first component's channel
-        // This will block until it's ready to do something
-        s.pendingQueue <- msg
+            handled := false
+            for index := 1; index <= numSsegments; index++ {
+                nameComponents := requestName.SegmentStrings()
+                callbackInterface, ok := s.prefixTable.Lookup(nameComponents)
+
+                if ok {
+                    callback := callbackInterface.(MessageCallback)
+                    callback(msg)
+                    s.prefixTable.Drop(nameComponents)
+                    handled = true
+                }
+            }
+
+            if !handled {
+                s.pendingQueue <- msg
+            }
+        default:
+            callback, ok := s.pendingMap[msg.Identifier()]
+            if ok {
+                callback(msg)
+            } else {
+                s.pendingQueue <- msg
+            }
+        }
+
+        // // Check to see if there's a pending callback
+        // callback, ok := s.pendingMap[msg.Identifier()]
+        // if ok && msg.GetPacketType() != tlvCodec.T_INTEREST {
+        //     fmt.Println("Calling the response callback")
+        //     callback(msg)
+        // } else {
+        //     // Nope -- enqueue the message in the pending queue to free up
+        //     // space in the first component's channel
+        //     // This will block until it's ready to do something
+        //     s.pendingQueue <- msg
+        // }
     }
 }
 
@@ -103,6 +140,8 @@ func Create(config string) *Stack {
     stack := &Stack{
         components: []Component{cryptoComponent, codecComponent},
         pendingQueue: make(chan messages.Message, 10000), // random constant -- make this configurable
+        pendingMap: make(map[string]MessageCallback),
+        prefixTable: lpm.LPM{},
     }
 
     // 5. start each component

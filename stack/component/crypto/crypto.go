@@ -95,7 +95,7 @@ func (c CryptoComponent) handleIngressRequest(msg messages.Message) {
 
 // Check to see if there are any other messages to verify with this
 // newly verified key. If there is, recursively call the verify request
-func (c CryptoComponent) processPendingResponses(msg messages.Message) {
+func (c *CryptoComponent) processPendingResponses(msg messages.Message) {
     dependentRequest, ok := c.pendingVerificationQueue[msg.Identifier()]
     if ok {
         c.handleIngressResponse(dependentRequest)
@@ -109,6 +109,7 @@ func (c CryptoComponent) processPendingResponses(msg messages.Message) {
         }
     } else {
         c.ingress <- msg
+        fmt.Println("Dropping pending response:", msg.Identifier())
         delete(c.pendingMap, msg.Identifier())
     }
 }

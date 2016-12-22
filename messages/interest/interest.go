@@ -58,6 +58,7 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
     var err error
 
     containers := make([]codec.TLV, 0)
+    var dataPayload payload.Payload
 
     for _, tlv := range(tlvs.Children()) {
         if tlv.Type() == codec.T_NAME {
@@ -74,7 +75,7 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
         } else if tlv.Type() == codec.T_PAYLDTYPE {
             // pass
         } else if tlv.Type() == codec.T_PAYLOAD {
-            // pass
+            dataPayload = payload.Create(tlv.Value())
         } else if tlv.Type() == codec.T_KEYID_REST {
             // pass
         } else if tlv.Type() == codec.T_HASH_REST {
@@ -84,7 +85,7 @@ func CreateFromTLV(tlvs codec.TLV) (*Interest, error) {
         }
     }
 
-    return &Interest{name: interestName, containers: containers}, nil
+    return &Interest{name: interestName, containers: containers, dataPayload: dataPayload}, nil
 }
 
 // codec.TLVs

@@ -88,7 +88,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
     // Create and start the session
-    session := esic.NewESIC(sharedKey[:], acceptKEX.GetSessionID())
+    session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
     handler(session)
 
     fmt.Println(sharedKey)
@@ -144,7 +144,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             fmt.Println(sharedKey)
 
             // Create and start the session
-            session := esic.NewESIC(sharedKey[:], accept.GetSessionID())
+            session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())
             callback(session)
 
             break

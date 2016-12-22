@@ -40,6 +40,14 @@ func (t *prefixTable) Lookup(key string) (interface{}, error) {
     return val, nil
 }
 
+func (t *prefixTable) Drop(key string) {
+    realKey := prefixKey{key}
+    _, ok := t.dict[realKey]
+    if ok {
+        delete(t.dict, realKey)
+    }
+}
+
 type LPM struct {
     // XXX: we also need to store regexes here
     tables []*prefixTable
@@ -77,5 +85,14 @@ func (l *LPM) Lookup(keys []string) (interface{}, bool) {
     return nil, false
 }
 
-func (l LPM) Drop(key string) {
+func (l *LPM) Drop(keys []string) {
+    for index := len(keys) - 1; index >= 0; index-- {
+        prefix := strings.Join(keys[:index + 1], "")
+        if _, err := l.tables[index].Lookup(prefix); err == nil {
+            l.tables[index].Drop(prefix)
+        }
+    }
 }
+
+// func (l LPM) Drop(key string) {
+// }

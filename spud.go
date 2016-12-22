@@ -39,11 +39,23 @@ var count = 0
 func ProducerSessionHandler(session *esic.ESIC) {
     fmt.Println("Producer session established! ")
     count++
+
+    session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
+        fmt.Println("Producer supplying a response...")
+        return []byte("Hello CCNxKE!")
+    })
 }
+
+var done chan int
 
 func ConsumerSessionHandler(session *esic.ESIC) {
     fmt.Println("Consumer session established! ")
     count++
+
+    session.Get("/foo/bar", func(data []byte) {
+        fmt.Println("Got the data back:", string(data))
+        done <- 1
+    })
 }
 
 func testSession() {
@@ -61,6 +73,9 @@ func testSession() {
             break
         }
     }
+
+    // sleep until the consumer gets a response
+    <- done
 }
 
 func main() {
