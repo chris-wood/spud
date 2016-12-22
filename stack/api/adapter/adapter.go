@@ -9,7 +9,7 @@ import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
 
 type NameAPI struct {
-    apiStack stack.Stack
+    apiStack *stack.Stack
 
     prefixTable lpm.LPM
     // prefixMap map[string]RequestCallback
@@ -19,7 +19,7 @@ type NameAPI struct {
 type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
 
-func NewNameAPI(s stack.Stack) *NameAPI {
+func NewNameAPI(s *stack.Stack) *NameAPI {
     prefixLPM := lpm.LPM{}
 
     api := &NameAPI{

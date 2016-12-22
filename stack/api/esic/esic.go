@@ -3,12 +3,16 @@ package esic
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
 
 type ESIC struct {
+    sessionID string
+    counter int
+
     writeEncKey []byte
     writeMacKey []byte
     readEncKey []byte
@@ -21,6 +25,23 @@ type ESIC struct {
 
 type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
+
+// XXX: session creation
+
+func NewESIC(masterSecret []byte, sessionID string) *ESIC {
+    esic := ESIC{
+        sessionID: sessionID,
+        counter: 0,
+        writeMacKey: masterSecret,
+        writeEncKey: masterSecret,
+        readMacKey: masterSecret,
+        readEncKey: masterSecret,
+    }
+
+    go esic.process()
+
+    return &esic
+}
 
 func (n *ESIC) Serve(prefix string, sessionID string, callback RequestCallback) {
     // XX store the prefix, callback tuple in the map
@@ -37,13 +58,18 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
     if err == nil {
         request := interest.CreateWithName(requestName)
 
-        // XXX: encode the interest
-        // XXX: encrypt it
-        // XXX: insert in interest payload
-        // XXX: send
+        e := codec.Encoder{}
+        encodedRequest := e.EncodeTLV(request)
+        // XXX: encrypt+MAC the interest here
 
-        n.pendingMap[request.Identifier()] = callback
-        n.apiStack.Enqueue(request)
+        baseName, _ := name.Parse(nameString)
+        sessionName, _ := baseName.AppendComponent(n.sessionID)
+
+        encapPayload := payload.Create(encodedRequest)
+        encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
+
+        n.pendingMap[encapInterest.Identifier()] = callback
+        n.apiStack.Enqueue(encapInterest)
     }
 }
 
@@ -66,10 +92,33 @@ func (n *ESIC) process() {
                     callback := callbackInterface.(RequestCallback)
                     go func() {
                         // XXX: this needs to be the full name string, not the prefix
-                        data := callback(prefix, msg.Payload().Value())
+                        encapPayload := msg.Payload().Value()
+                        // XXX: decrypt the payload
+
+                        d := codec.Decoder{}
+                        decodedTlV := d.Decode(encapPayload)
+                        if len(decodedTlV) > 1 {
+                            return // there should be only one thing encapsulated -- a piece of data
+                        }
+                        responseMsg, err := messages.CreateFromTLV(decodedTlV)
+                        if err != nil {
+                            return  // handle this as needed
+                        }
+
+                        data := callback(prefix, responseMsg.Payload().Value())
                         dataPayload := payload.Create(data)
                         response := content.CreateWithNameAndPayload(requestName, dataPayload)
-                        n.apiStack.Enqueue(response)
+
+                        // Encode and encrypt the content response
+                        e := codec.Encoder{}
+                        encodedResponse := e.EncodeTLV(response)
+                        // XXX: encrypt the response
+
+                        // Encap the response and send it downstream
+                        wrappedPayload := payload.Create(encodedResponse)
+                        encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
+
+                        n.apiStack.Enqueue(encapResponse)
                     }()
                     break
                 }
@@ -77,6 +126,7 @@ func (n *ESIC) process() {
         } else {
             callback, ok := n.pendingMap[msg.Identifier()]
             if ok {
+                // XXX: need to get encapped field, decrypt it, and pass it up
                 pay := msg.Payload()
                 callback(pay.Value())
             }

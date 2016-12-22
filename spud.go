@@ -46,8 +46,8 @@ func testSession() {
     api := ccnxke.NewCCNxKEAPI(myStack)
 
     prefix, _ := name.Parse("ccnx:/producer")
-    api.Service(prefix, SessionHandler)
-    api.Connect(prefix, SessionHandler) // SessionHandler will be invoked if
+    api.Service(prefix, SessionHandler) // ditto below
+    api.Connect(prefix, SessionHandler) // SessionHandler will be invoked if and when the session is successfully completed
 
     for ;; {
         if count != 0 {

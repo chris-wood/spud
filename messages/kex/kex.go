@@ -4,22 +4,14 @@ import "fmt"
 import "bytes"
 import "time"
 import "github.com/chris-wood/spud/util"
-// import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/codec"
-// import "github.com/chris-wood/spud/codec"
-// import "github.com/chris-wood/spud/messages/name"
-// import typedhash "github.com/chris-wood/spud/messages/hash"
-// import "github.com/chris-wood/spud/messages/link"
-// import "github.com/chris-wood/spud/messages/payload"
-// import "github.com/chris-wood/spud/messages/validation"
 
 import "crypto/rand"
 import "crypto/hmac"
 import "crypto/sha256"
-// import "encoding/base64"
 import "encoding/binary"
 
-// XXX: use something in the standard crypto library
+// XXX: wrap this up
 import "golang.org/x/crypto/nacl/box"
 
 // Extension keys into the encoder dictionary

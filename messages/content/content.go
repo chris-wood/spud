@@ -46,6 +46,10 @@ func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Cont
     return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
+func CreateWithNameAndTypedPayload(name name.Name, payloadType uint8, dataPayload payload.Payload) *Content {
+    return &Content{name: name, dataPayload: dataPayload, payloadType: payloadType, containers: make([]codec.TLV, 0)}
+}
+
 // func CreateWithNameAndLink(name, *name.Name, payload []byte) *Content {
 //     return &Content{name: name, payload: payload}
 // }

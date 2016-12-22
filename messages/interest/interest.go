@@ -44,9 +44,9 @@ func CreateWithName(name name.Name) *Interest {
     return &Interest{name: name, containers: make([]codec.TLV, 0)}
 }
 
-// func CreateWithNameAndPayload(name *name.Name, payload []byte) *Interest {
-//     return &Interest{name: name, payload: payload}
-// }
+func CreateWithNameAndPayload(name name.Name, payloadType uint8, payloadValue payload.Payload) *Interest {
+    return &Interest{name: name, payloadType: payloadType, dataPayload: payloadValue}
+}
 
 func CreateFromLink(link link.Link) *Interest {
     return &Interest{name: link.Name(), keyId: link.KeyID(), contentId: link.ContentID(), containers: make([]codec.TLV, 0)}

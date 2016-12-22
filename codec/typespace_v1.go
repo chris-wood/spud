@@ -22,7 +22,6 @@ const T_EXPIRY uint16 = 0x0006
 const T_HASHGROUP uint16 = 0x0007
 const T_BLOCKHASHGROUP uint16 = 0x0008
 const T_KEX uint16 = 0x0009
-const T_ENCAP uint16 = 0x000A
 
 // name sements
 const T_NAMESEG_NAME uint16 = 0x0001

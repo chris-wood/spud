@@ -17,14 +17,16 @@ import "github.com/chris-wood/spud/messages/content"
 import "golang.org/x/crypto/nacl/box"
 
 type CCNxKEAPI struct {
-    kexStack stack.Stack
+    kexStack *stack.Stack
     prefixTable lpm.LPM
 }
 
 type SessionCallback func(session esic.ESIC)
 type ResponseCallback func([]byte)
 
-func NewCCNxKEAPI(s stack.Stack) *CCNxKEAPI {
+const connectString string = "CONNECT"
+
+func NewCCNxKEAPI(s *stack.Stack) *CCNxKEAPI {
     prefixLPM := lpm.LPM{}
     api := &CCNxKEAPI{
         kexStack: s,
@@ -35,7 +37,8 @@ func NewCCNxKEAPI(s stack.Stack) *CCNxKEAPI {
 
 func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     randomPrefix, _ := util.GenerateRandomString(16)
-    bareHelloName, _ := prefix.AppendComponent(randomPrefix)
+    bareHelloName, _ := prefix.AppendComponent(connectString)
+    bareHelloName, _ = bareHelloName.AppendComponent(randomPrefix)
 
     // Send the bare hello
     bareHello := kex.KEXHello()
@@ -46,6 +49,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
     reply := api.kexStack.Dequeue()
+    fmt.Println("Got the REJECT")
 
     reject, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
@@ -55,7 +59,8 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     hello := kex.KEXFullHello(bareHello, reject.(*kex.KEX))
 
     randomPrefix, _ = util.GenerateRandomString(16)
-    helloName, _ := prefix.AppendComponent(randomPrefix)
+    helloName, _ := prefix.AppendComponent(connectString)
+    helloName, _ = prefix.AppendComponent(randomPrefix)
 
     helloRequest := interest.CreateWithName(helloName)
     helloRequest.AddContainer(hello)
@@ -64,6 +69,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
     reply = api.kexStack.Dequeue()
+    fmt.Println("Got the ACCEPT")
 
     accept, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
@@ -102,6 +108,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
         switch kexContainer.GetMessageType() {
         case codec.T_KEX_BAREHELLO:
+            fmt.Println("Got the BARE HELLO")
             reject := kex.KEXHelloReject(kexContainer, macKey)
             rejectResponse := content.CreateWithName(request.Name())
             rejectResponse.AddContainer(reject)
@@ -109,6 +116,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             break
 
         case codec.T_KEX_HELLO:
+            fmt.Println("Got the HELLO")
             accept, err := kex.KEXHelloAccept(kexContainer, macKey, encKey)
             if err != nil {
                 fmt.Println(err)
@@ -135,6 +143,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
         case codec.T_KEX_REJECT:
         case codec.T_KEX_ACCEPT:
+            fmt.Println("Got an invalid message...")
             // invalid message type to be received here...
             break
         }
