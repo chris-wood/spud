@@ -38,7 +38,7 @@ func NewESIC(masterSecret []byte, sessionID string) *ESIC {
         readEncKey: masterSecret,
     }
 
-    go esic.process()
+    // XXX: invoke the process function here
 
     return &esic
 }
@@ -69,9 +69,30 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
 
         n.pendingMap[encapInterest.Identifier()] = callback
-        n.apiStack.Enqueue(encapInterest)
+        // n.apiStack.Enqueue(encapInterest)
+
+        n.apiStack.Get(encapInterest, func(msg messages.Message) {
+            encapPayload := msg.Payload().Value()
+            // XXX: decrypt the payload
+
+            d := codec.Decoder{}
+            decodedTlV := d.Decode(encapPayload)
+            if len(decodedTlV) > 1 {
+                return // there should be only one thing encapsulated -- a piece of data
+            }
+            responseMsg, err := messages.CreateFromTLV(decodedTlV)
+            if err != nil {
+                return  // handle this as needed
+            }
+
+            callback(responseMsg.Payload().Value())
+        })
     }
 }
+
+// func (n *ESIC) processResponse(msg messages.Message) {
+//
+// }
 
 func (n *ESIC) process() {
     for ;; {
@@ -122,13 +143,6 @@ func (n *ESIC) process() {
                     }()
                     break
                 }
-            }
-        } else {
-            callback, ok := n.pendingMap[msg.Identifier()]
-            if ok {
-                // XXX: need to get encapped field, decrypt it, and pass it up
-                pay := msg.Payload()
-                callback(pay.Value())
             }
         }
 

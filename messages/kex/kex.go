@@ -394,6 +394,10 @@ func (k KEX) GetPrivateKeyShare() []byte {
     return k.extensionMap[_kPrivateKeyShare].ExtValue
 }
 
+func (k KEX) GetSessionID() string {
+    return string(k.extensionMap[_kSessionID].ExtValue)
+}
+
 func (k KEX) GetMessageType() uint16 {
     return k.messageType
 }

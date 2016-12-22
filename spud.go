@@ -36,9 +36,14 @@ func testStack() {
 
 var count = 0
 
-func SessionHandler(session esic.ESIC) {
-    fmt.Println("Session established")
-    count = 1
+func ProducerSessionHandler(session *esic.ESIC) {
+    fmt.Println("Producer session established! ")
+    count++
+}
+
+func ConsumerSessionHandler(session *esic.ESIC) {
+    fmt.Println("Consumer session established! ")
+    count++
 }
 
 func testSession() {
@@ -46,12 +51,14 @@ func testSession() {
     api := ccnxke.NewCCNxKEAPI(myStack)
 
     prefix, _ := name.Parse("ccnx:/producer")
-    api.Service(prefix, SessionHandler) // ditto below
-    api.Connect(prefix, SessionHandler) // SessionHandler will be invoked if and when the session is successfully completed
+    api.Service(prefix, ProducerSessionHandler) // ditto below
+    api.Connect(prefix, ConsumerSessionHandler) // SessionHandler will be invoked if and when the session is successfully completed
 
     for ;; {
-        if count != 0 {
-            time.Sleep(100 * time.Millisecond)
+        if count == 0 {
+            time.Sleep(500 * time.Millisecond)
+        } else {
+            break
         }
     }
 }
