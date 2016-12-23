@@ -1,9 +1,7 @@
 package main
 
 import "fmt"
-import "bufio"
 import "time"
-import "os"
 
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/stack/api/adapter"
@@ -12,8 +10,12 @@ import "github.com/chris-wood/spud/stack/api/esic"
 
 import "github.com/chris-wood/spud/messages/name"
 
+var count = 0
+var done chan int
+
 func displayResponse(response []byte) {
     fmt.Println("Response: " + string(response))
+    count = 1
 }
 
 func generateResponse(name string, response []byte) []byte {
@@ -27,14 +29,15 @@ func testStack() {
     api.Serve("ccnx:/hello/spud", generateResponse)
     api.Get("ccnx:/hello/spud", displayResponse)
 
-    reader := bufio.NewReader(os.Stdin)
     for ;; {
-        fmt.Print("> ")
-        reader.ReadString('\n') // text, err :=
+        if count == 0 {
+            time.Sleep(100 * time.Millisecond)
+        } else {
+            break
+        }
     }
 }
 
-var count = 0
 
 func ProducerSessionHandler(session *esic.ESIC) {
     fmt.Println("Producer session established! ")
@@ -45,8 +48,6 @@ func ProducerSessionHandler(session *esic.ESIC) {
         return []byte("Hello CCNxKE!")
     })
 }
-
-var done chan int
 
 func ConsumerSessionHandler(session *esic.ESIC) {
     fmt.Println("Consumer session established! ")
@@ -79,6 +80,6 @@ func testSession() {
 }
 
 func main() {
-    // testStack()
+    //testStack()
     testSession()
 }

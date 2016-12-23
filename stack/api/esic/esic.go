@@ -1,8 +1,5 @@
 package esic
 
-import "fmt"
-
-import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
@@ -10,6 +7,9 @@ import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
+
+import "crypto/aes"
+import "crypto/cipher"
 
 type ESIC struct {
     sessionID string
@@ -20,8 +20,9 @@ type ESIC struct {
     readEncKey []byte
     readMacKey []byte
 
-    prefixTable lpm.LPM
-    pendingMap map[string]ResponseCallback
+    writeCipher cipher.Block
+    readCipher cipher.Block
+
     apiStack *stack.Stack
 }
 
@@ -31,6 +32,16 @@ type ResponseCallback func([]byte)
 // XXX: session creation
 
 func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
+    writeCipher, err := aes.NewCipher(masterSecret)
+    if err != nil {
+        panic(err.Error())
+    }
+
+    readCipher, err := aes.NewCipher(masterSecret)
+    if err != nil {
+        panic(err.Error())
+    }
+
     esic := ESIC{
         sessionID: sessionID,
         counter: 0,
@@ -38,55 +49,45 @@ func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
         writeEncKey: masterSecret,
         readMacKey: masterSecret,
         readEncKey: masterSecret,
-        pendingMap: make(map[string]ResponseCallback),
+        writeCipher: writeCipher,
+        readCipher: readCipher,
         apiStack: stack,
     }
-
-    // XXX: invoke the process function here
 
     return &esic
 }
 
 func (n *ESIC) Serve(prefix string, callback RequestCallback) {
-    // XX store the prefix, callback tuple in the map
-    // n.prefixMap[prefix] = callback
-    // prefixName, err := name.Parse(prefix)
-    // if err == nil {
-        // nameComponents := prefixName.SegmentStrings()
-        // n.prefixTable.Insert(nameComponents, callback)
-        n.apiStack.Service(prefix, func(msg messages.Message) {
-            fmt.Println("ESIC producer handling interest:", msg.Identifier())
-            encapPayload := msg.Payload().Value()
-            // XXX: decrypt the payload
+    n.apiStack.Service(prefix, func(msg messages.Message) {
+        encapPayload := msg.Payload().Value()
+        // XXX: decrypt the payload
 
-            d := codec.Decoder{}
-            decodedTlV := d.Decode(encapPayload)
-            if len(decodedTlV) > 1 {
-                return // there should be only one thing encapsulated -- a piece of data
-            }
-            fmt.Println(encapPayload)
-            responseMsg, err := messages.CreateFromTLV(decodedTlV)
-            if err != nil {
-                return  // handle this as needed
-            }
+        d := codec.Decoder{}
+        decodedTlV := d.Decode(encapPayload)
+        if len(decodedTlV) > 1 {
+            return // there should be only one thing encapsulated -- a piece of data
+        }
+        responseMsg, err := messages.CreateFromTLV(decodedTlV)
+        if err != nil {
+        return  // handle this as needed
+        }
 
-            data := callback(prefix, responseMsg.Payload().Value())
-            dataPayload := payload.Create(data)
-            response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
+        data := callback(prefix, responseMsg.Payload().Value())
+        dataPayload := payload.Create(data)
+        response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
 
-            // Encode and encrypt the content response
-            e := codec.Encoder{}
-            encodedResponse := e.EncodeTLV(response)
-            // XXX: encrypt the response
+        // Encode and encrypt the content response
+        e := codec.Encoder{}
+        encodedResponse := e.EncodeTLV(response)
+        // XXX: encrypt the response
 
-            // Encap the response and send it downstream
-            wrappedPayload := payload.Create(encodedResponse)
-            encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
+        // Encap the response and send it downstream
+        wrappedPayload := payload.Create(encodedResponse)
+        encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
 
-            // n.apiStack.Enqueue(encapResponse)
-            n.apiStack.Enqueue(encapResponse)
-        })
-    // }
+        // n.apiStack.Enqueue(encapResponse)
+        n.apiStack.Enqueue(encapResponse)
+    })
 }
 
 func (n *ESIC) Get(nameString string, callback ResponseCallback) {
@@ -96,6 +97,15 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
 
         e := codec.Encoder{}
         encodedRequest := e.EncodeTLV(request)
+
+        /*
+        aesgcm, err := cipher.NewGCM(n.writeCipher)
+        if err != nil {
+            panic(err.Error())
+        }
+        */
+        // encryptedInterest := aesgcm.Seal(nil, nonce, encodedRequest, nil)
+
         // XXX: encrypt+MAC the interest here
 
         baseName, _ := name.Parse(nameString)
@@ -104,10 +114,6 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         encapPayload := payload.Create(encodedRequest)
         encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
 
-        // n.pendingMap[encapInterest.Identifier()] = callback
-        // n.apiStack.Enqueue(encapInterest)
-
-        fmt.Println("Calling stack.Get")
         n.apiStack.Get(encapInterest, func(msg messages.Message) {
             encapPayload := msg.Payload().Value()
             // XXX: decrypt the payload
@@ -118,8 +124,6 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
                 return // there should be only one thing encapsulated -- a piece of data
             }
 
-            fmt.Println("Consumer is decoding the response...")
-            fmt.Println(encapPayload)
             responseMsg, err := messages.CreateFromTLV(decodedTlV)
             if err != nil {
                 return  // handle this as needed
@@ -130,63 +134,3 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
     }
 }
 
-// func (n *ESIC) processResponse(msg messages.Message) {
-//
-// }
-
-func (n *ESIC) process() {
-    for ;; {
-        msg := n.apiStack.Dequeue()
-
-        if msg.GetPacketType() == codec.T_INTEREST {
-            // XXX: this needs to use LPM to identify the service prefix
-            requestName := msg.Name()
-            numSsegments := len(requestName.Segments)
-
-            for index := 1; index <= numSsegments; index++ {
-                prefix := requestName.Prefix(index)
-                nameComponents := requestName.SegmentStrings()
-                // callback, ok := n.prefixMap[prefix]
-                callbackInterface, ok := n.prefixTable.Lookup(nameComponents)
-
-                if ok {
-                    callback := callbackInterface.(RequestCallback)
-                    go func() {
-                        // XXX: this needs to be the full name string, not the prefix
-                        encapPayload := msg.Payload().Value()
-                        // XXX: decrypt the payload
-
-                        d := codec.Decoder{}
-                        decodedTlV := d.Decode(encapPayload)
-                        if len(decodedTlV) > 1 {
-                            return // there should be only one thing encapsulated -- a piece of data
-                        }
-                        responseMsg, err := messages.CreateFromTLV(decodedTlV)
-                        if err != nil {
-                            return  // handle this as needed
-                        }
-
-                        data := callback(prefix, responseMsg.Payload().Value())
-                        dataPayload := payload.Create(data)
-                        response := content.CreateWithNameAndPayload(requestName, dataPayload)
-
-                        // Encode and encrypt the content response
-                        e := codec.Encoder{}
-                        encodedResponse := e.EncodeTLV(response)
-                        // XXX: encrypt the response
-
-                        // Encap the response and send it downstream
-                        wrappedPayload := payload.Create(encodedResponse)
-                        encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
-
-                        n.apiStack.Enqueue(encapResponse)
-                    }()
-                    break
-                }
-            }
-        }
-
-        // extract the name from the message hand it to the callback
-        // enqueue the message to the stack
-    }
-}

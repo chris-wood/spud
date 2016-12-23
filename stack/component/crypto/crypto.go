@@ -109,7 +109,9 @@ func (c *CryptoComponent) processPendingResponses(msg messages.Message) {
         }
     } else {
         c.ingress <- msg
-        fmt.Println("Dropping pending response:", msg.Identifier())
+//        fmt.Println("Dropping pending response:", msg.Identifier())
+//        fmt.Println(c.pendingMap)
+//        fmt.Println(msg.GetPacketType() == tlvCodec.T_INTEREST)
         delete(c.pendingMap, msg.Identifier())
     }
 }
