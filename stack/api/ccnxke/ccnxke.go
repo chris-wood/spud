@@ -77,8 +77,6 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     }
     acceptKEX := accept.(*kex.KEX)
 
-    log.Printf("Consumer: ")
-
     var sharedKey [32]byte
     var peerPublic [32]byte
     var privateKey [32]byte
@@ -90,7 +88,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
     handler(session)
 
-    log.Println(sharedKey)
+    log.Println("Consumer: ", sharedKey)
 }
 
 func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
@@ -132,7 +130,6 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
             // XXX: go to the KDF step
 
-            log.Printf("Producer: ")
             var sharedKey [32]byte
             var peerPublic [32]byte
             var privateKey [32]byte
@@ -140,7 +137,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             copy(privateKey[:], accept.GetPrivateKeyShare())
             box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-            log.Println(sharedKey)
+            log.Println("Producer:", sharedKey)
 
             // Create and start the session
             session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())

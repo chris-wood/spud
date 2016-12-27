@@ -40,19 +40,13 @@ func testStack() {
 
 
 func ProducerSessionHandler(session *esic.ESIC) {
-    count++
-
     session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
-        fmt.Println("Producer supplying a response...")
         return []byte("Hello CCNxKE!")
     })
 }
 
 func ConsumerSessionHandler(session *esic.ESIC) {
-    count++
-
     session.Get("/foo/bar", func(data []byte) {
-        fmt.Println("Got the data back:", string(data))
         done <- 1
     })
 }
@@ -60,18 +54,11 @@ func ConsumerSessionHandler(session *esic.ESIC) {
 func testSession() {
     myStack := stack.Create("")
     api := ccnxke.NewCCNxKEAPI(myStack)
+    done = make(chan int)
 
     prefix, _ := name.Parse("ccnx:/producer")
     api.Service(prefix, ProducerSessionHandler) // ditto below
     api.Connect(prefix, ConsumerSessionHandler) // SessionHandler will be invoked if and when the session is successfully completed
-
-    for ;; {
-        if count == 0 {
-            time.Sleep(500 * time.Millisecond)
-        } else {
-            break
-        }
-    }
 
     // sleep until the consumer gets a response
     <- done
