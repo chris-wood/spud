@@ -1,6 +1,6 @@
 package ccnxke
 
-import "fmt"
+import "log"
 import "time"
 
 import "github.com/chris-wood/spud/tables/lpm"
@@ -49,11 +49,11 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
     reply := api.kexStack.Dequeue()
-    fmt.Println("Got the REJECT")
+    log.Println("Got the REJECT")
 
     reject, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
-        fmt.Println("Error: no KEX container in the REJECT content object")
+        log.Println("Error: no KEX container in the REJECT content object")
         return
     }
     hello := kex.KEXFullHello(bareHello, reject.(*kex.KEX))
@@ -69,16 +69,15 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
     reply = api.kexStack.Dequeue()
-    fmt.Println("Got the ACCEPT")
 
     accept, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
-        fmt.Println("Error: no KEX container in the ACCEPT content object")
+        log.Println("Error: no KEX container in the ACCEPT content object")
         return
     }
     acceptKEX := accept.(*kex.KEX)
 
-    fmt.Printf("Consumer: ")
+    log.Printf("Consumer: ")
 
     var sharedKey [32]byte
     var peerPublic [32]byte
@@ -91,7 +90,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
     handler(session)
 
-    fmt.Println(sharedKey)
+    log.Println(sharedKey)
 }
 
 func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
@@ -112,7 +111,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
         switch kexContainer.GetMessageType() {
         case codec.T_KEX_BAREHELLO:
-            fmt.Println("Got the BARE HELLO")
+            log.Println("Got the BARE HELLO")
             reject := kex.KEXHelloReject(kexContainer, macKey)
             rejectResponse := content.CreateWithName(request.Name())
             rejectResponse.AddContainer(reject)
@@ -120,10 +119,10 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             break
 
         case codec.T_KEX_HELLO:
-            fmt.Println("Got the HELLO")
+            log.Println("Got the HELLO")
             accept, err := kex.KEXHelloAccept(kexContainer, macKey, encKey)
             if err != nil {
-                fmt.Println(err)
+                log.Println(err)
                 break
             }
 
@@ -133,7 +132,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
             // XXX: go to the KDF step
 
-            fmt.Printf("Producer: ")
+            log.Printf("Producer: ")
             var sharedKey [32]byte
             var peerPublic [32]byte
             var privateKey [32]byte
@@ -141,7 +140,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             copy(privateKey[:], accept.GetPrivateKeyShare())
             box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-            fmt.Println(sharedKey)
+            log.Println(sharedKey)
 
             // Create and start the session
             session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())
@@ -151,7 +150,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
         case codec.T_KEX_REJECT:
         case codec.T_KEX_ACCEPT:
-            fmt.Println("Got an invalid message...")
+            log.Println("Got an invalid message...")
             // invalid message type to be received here...
             break
         }

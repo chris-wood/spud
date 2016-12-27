@@ -40,7 +40,6 @@ func testStack() {
 
 
 func ProducerSessionHandler(session *esic.ESIC) {
-    fmt.Println("Producer session established! ")
     count++
 
     session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
@@ -50,7 +49,6 @@ func ProducerSessionHandler(session *esic.ESIC) {
 }
 
 func ConsumerSessionHandler(session *esic.ESIC) {
-    fmt.Println("Consumer session established! ")
     count++
 
     session.Get("/foo/bar", func(data []byte) {
