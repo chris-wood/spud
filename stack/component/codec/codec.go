@@ -114,7 +114,7 @@ func (c CodecComponent) ProcessIngressMessages() {
             if message.GetPacketType() == codec.T_INTEREST {
                 _, found := c.stackPit.Lookup(message.Identifier())
                 if found {
-                    // XXX: delete the interest
+                    c.stackPit.Remove(message.Identifier())
                     c.ingress <- message
                 } else {
                     // drop!

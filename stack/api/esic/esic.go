@@ -20,8 +20,8 @@ type ESIC struct {
     readEncKey []byte
     readMacKey []byte
 
-    writeCipher cipher.Block
-    readCipher cipher.Block
+    writeCipher cipher.AEAD
+    readCipher cipher.AEAD
 
     apiStack *stack.Stack
 }
@@ -36,8 +36,16 @@ func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
     if err != nil {
         panic(err.Error())
     }
+    writeAEAD, err := cipher.NewGCM(writeCipher)
+    if err != nil {
+        panic(err.Error())
+    }
 
     readCipher, err := aes.NewCipher(masterSecret)
+    if err != nil {
+        panic(err.Error())
+    }
+    readAEAD, err := cipher.NewGCM(readCipher)
     if err != nil {
         panic(err.Error())
     }
@@ -49,8 +57,8 @@ func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
         writeEncKey: masterSecret,
         readMacKey: masterSecret,
         readEncKey: masterSecret,
-        writeCipher: writeCipher,
-        readCipher: readCipher,
+        writeCipher: writeAEAD,
+        readCipher: readAEAD,
         apiStack: stack,
     }
 
@@ -59,11 +67,17 @@ func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
 
 func (n *ESIC) Serve(prefix string, callback RequestCallback) {
     n.apiStack.Service(prefix, func(msg messages.Message) {
-        encapPayload := msg.Payload().Value()
-        // XXX: decrypt the payload
+        encryptedPayload := msg.Payload().Value()
+
+        // Decrypt the interest
+        nonce := make([]byte, 12) // all zeros to start
+        encodedInterest, err := n.readCipher.Open(nil, nonce, encryptedPayload, nil)
+        if err != nil {
+            return
+        }
 
         d := codec.Decoder{}
-        decodedTlV := d.Decode(encapPayload)
+        decodedTlV := d.Decode(encodedInterest)
         if len(decodedTlV) > 1 {
             return // there should be only one thing encapsulated -- a piece of data
         }
@@ -79,10 +93,13 @@ func (n *ESIC) Serve(prefix string, callback RequestCallback) {
         // Encode and encrypt the content response
         e := codec.Encoder{}
         encodedResponse := e.EncodeTLV(response)
-        // XXX: encrypt the response
+
+        // Encrypt the response
+        nonce = make([]byte, 12) // all zeros to start
+        encryptedResponse := n.writeCipher.Seal(nil, nonce, encodedResponse, nil)
 
         // Encap the response and send it downstream
-        wrappedPayload := payload.Create(encodedResponse)
+        wrappedPayload := payload.Create(encryptedResponse)
         encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
 
         // n.apiStack.Enqueue(encapResponse)
@@ -98,28 +115,28 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         e := codec.Encoder{}
         encodedRequest := e.EncodeTLV(request)
 
-        /*
-        aesgcm, err := cipher.NewGCM(n.writeCipher)
-        if err != nil {
-            panic(err.Error())
-        }
-        */
-        // encryptedInterest := aesgcm.Seal(nil, nonce, encodedRequest, nil)
-
-        // XXX: encrypt+MAC the interest here
+        // Encrypt the interest
+        nonce := make([]byte, 12) // all zeros to start
+        encryptedInterest := n.writeCipher.Seal(nil, nonce, encodedRequest, nil)
 
         baseName, _ := name.Parse(nameString)
         sessionName, _ := baseName.AppendComponent(n.sessionID)
 
-        encapPayload := payload.Create(encodedRequest)
+        encapPayload := payload.Create(encryptedInterest)
         encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
 
         n.apiStack.Get(encapInterest, func(msg messages.Message) {
-            encapPayload := msg.Payload().Value()
-            // XXX: decrypt the payload
+            encryptedPayload := msg.Payload().Value()
+
+            // Decrypt the interest
+            nonce := make([]byte, 12) // all zeros to start
+            encapInterest, err := n.readCipher.Open(nil, nonce, encryptedPayload, nil)
+            if err != nil {
+                return
+            }
 
             d := codec.Decoder{}
-            decodedTlV := d.Decode(encapPayload)
+            decodedTlV := d.Decode(encapInterest)
             if len(decodedTlV) > 1 {
                 return // there should be only one thing encapsulated -- a piece of data
             }
@@ -133,4 +150,3 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         })
     }
 }
-

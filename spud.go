@@ -48,6 +48,7 @@ func ProducerSessionHandler(session *esic.ESIC) {
 func ConsumerSessionHandler(session *esic.ESIC) {
     session.Get("/foo/bar", func(data []byte) {
         done <- 1
+        fmt.Println("Received:", string(data))
     })
 }
 
