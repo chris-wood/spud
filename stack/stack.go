@@ -108,9 +108,6 @@ func (s *Stack) processInputQueue() {
     }
 }
 
-// Get(message, callback)
-// Put(message) -- there is no callback for this!
-
 /*
 {
     "connector" : "tcp"

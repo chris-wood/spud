@@ -102,7 +102,6 @@ func (n *ESIC) Serve(prefix string, callback RequestCallback) {
         wrappedPayload := payload.Create(encryptedResponse)
         encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
 
-        // n.apiStack.Enqueue(encapResponse)
         n.apiStack.Enqueue(encapResponse)
     })
 }

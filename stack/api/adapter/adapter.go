@@ -41,4 +41,3 @@ func (n *NameAPI) Serve(nameString string, callback RequestCallback) {
         n.apiStack.Enqueue(response)
     })
 }
-
