@@ -115,8 +115,23 @@ func (s *Stack) processInputQueue() {
 }
 */
 func Create(config string) *Stack {
+    // Decode the JSON config
+    var configMap map[string]interface{}
+    if err := json.Unmarshal([]byte(config), &configMap); err != nil {
+        panic(err)
+    }
+
     // 1. create connector
-    fc, _ := connector.NewLoopbackForwarderConnector()
+    switch configMap["connector"].(string) {
+    case "tcp":
+        locator := configMap["fwd-address"].(string)
+        fc, _ := connector.NewTCPForwarderConnector(locator)
+        break
+    case "loopback":
+    default:
+        fc, _ := connector.NewLoopbackForwarderConnector()
+        break
+    }
 
     // 1.5. create the shared data structures
     stackCache := cache.NewCache()

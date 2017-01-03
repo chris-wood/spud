@@ -13,7 +13,7 @@ func displayResponse(response []byte) {
 }
 
 func get(name string) {
-    myStack := stack.Create("")
+    myStack := stack.Create(`{"connector": "tcp", "fwd-address": "localhost:9596"}`)
     api := adapter.NewNameAPI(myStack)
 
     done = make(chan int)
