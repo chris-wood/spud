@@ -2,6 +2,8 @@ package stack
 
 // import "fmt"
 
+import "encoding/json"
+
 import tlvCodec "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/messages"
@@ -121,15 +123,21 @@ func Create(config string) *Stack {
         panic(err)
     }
 
-    // 1. create connector
-    switch configMap["connector"].(string) {
+    var err error
+
+    // 1. create the link
+    var fc connector.ForwarderConnector
+    switch configMap["link"].(string) {
     case "tcp":
         locator := configMap["fwd-address"].(string)
-        fc, _ := connector.NewTCPForwarderConnector(locator)
+        fc, err = connector.NewAthenaTCPForwarderConnector(locator)
+        if err != nil {
+            panic(err)
+        }
         break
     case "loopback":
     default:
-        fc, _ := connector.NewLoopbackForwarderConnector()
+        fc, _ = connector.NewLoopbackForwarderConnector()
         break
     }
 

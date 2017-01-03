@@ -42,7 +42,7 @@ type TCPForwarderConnector struct {
     buffer []byte
 }
 
-func NewTCPForwarderConnector(location string) (*TCPForwarderConnector, error) {
+func NewAthenaTCPForwarderConnector(location string) (*TCPForwarderConnector, error) {
     connection, err := net.Dial("tcp", location)
     if err != nil {
         return nil, connectorError{"Unable to connect to the forwarder at " + location}

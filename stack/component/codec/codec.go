@@ -1,5 +1,7 @@
 package codec
 
+import "log"
+
 import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/codec"
@@ -94,6 +96,7 @@ func (c CodecComponent) ProcessIngressMessages() {
     decoder := codec.Decoder{}
     for ;; {
         msgBytes := c.connector.Read()
+        log.Println("Processing ingress message", msgBytes)
 
         // 1. Extract the message bytes (strip headers)
         // packetLength := readWord(msgBytes[2:4])
@@ -103,27 +106,31 @@ func (c CodecComponent) ProcessIngressMessages() {
         decodedTlV := decoder.Decode(msgBytes[headerLength:])
         message, err := messages.CreateFromTLV(decodedTlV)
 
-        // Lookup the item in the cache (XXX: we should only do this if it's a request)
+        // Lookup the item in the cache
+        // XXX: we should only do this if it's a request
         identity := message.Identifier()
         match, isPresent := c.stackCache.Lookup(identity)
 
         // If the response is cached, just serve it
         if isPresent && message.GetPacketType() == codec.T_INTEREST {
             c.connector.Write(match)
-        } else if err == nil { // 3. Enqueue in the upstream (ingress) queue
+        } else if err == nil {
+            // 3. Enqueue in the upstream (ingress) queue
             if message.GetPacketType() == codec.T_INTEREST {
                 _, found := c.stackPit.Lookup(message.Identifier())
                 if found {
                     c.stackPit.Remove(message.Identifier())
                     c.ingress <- message
                 } else {
-                    // drop!
+                    // drop
+                    log.Println("Content response is not the PIT -- discarding now.")
                 }
             } else {
                 c.ingress <- message
             }
         } else {
             // drop
+            log.Println("Error decoding packet", msgBytes)
         }
     }
 }
