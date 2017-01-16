@@ -61,7 +61,7 @@ func addAuthenticator(msg *messages.MessageWrapper, proc processor.CryptoProcess
         vp := validation.NewValidationPayload(signature)
         msg.SetValidationPayload(vp)
     } else {
-        log.Println("Error:", err)
+        log.Println("Signing error:", err)
     }
 
     return *msg, err
@@ -87,7 +87,6 @@ func (c CryptoComponent) ProcessEgressMessages() {
         // XXX: move this code to a function
         if msg.GetPacketType() == tlvCodec.T_INTEREST {
             c.pendingMap[msg.Identifier()] = msg
-            // c.codecComponent.Enqueue(msg)
         }
     }
 }
@@ -113,9 +112,6 @@ func (c *CryptoComponent) processPendingResponses(msg messages.MessageWrapper) {
         }
     } else {
         c.ingress <- msg
-//        fmt.Println("Dropping pending response:", msg.Identifier())
-//        fmt.Println(c.pendingMap)
-//        fmt.Println(msg.GetPacketType() == tlvCodec.T_INTEREST)
         delete(c.pendingMap, msg.Identifier())
     }
 }
@@ -133,7 +129,7 @@ func (c CryptoComponent) checkTrustProperties(msg messages.MessageWrapper) {
     if c.cryptoContext.IsTrustedKey(keyId) {
         c.processPendingResponses(msg)
     } else {
-        fmt.Println("Not a trusted key. Abort.")
+        log.Println("Not a trusted key. Drop the message.")
         c.dropPendingResponses(msg)
     }
 }
@@ -168,8 +164,8 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
             }
         }
     } else {
-        fmt.Println("Error: no matching request found: " + msg.Identifier())
-        fmt.Println("Dropping the packet.")
+        log.Println("Error: no matching request found: " + msg.Identifier())
+        log.Println("Dropping the packet.")
     }
 }
 

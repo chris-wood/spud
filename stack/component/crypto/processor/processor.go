@@ -11,6 +11,7 @@ import "crypto/sha256"
 import "crypto/x509"
 import "crypto"
 import "hash"
+import "log"
 import "fmt"
 
 type CryptoProcessor interface {
@@ -70,12 +71,12 @@ func (p RSAProcessor) Verify(request, response messages.MessageWrapper) bool {
         responseKey := validationAlgorithm.GetPublicKey()
         rawKey, err := x509.ParsePKIXPublicKey(responseKey.Value())
         if err != nil {
-            fmt.Println("error parsing public key")
+            log.Println("Error parsing public key")
             return false
         }
         key = rawKey.(*rsa.PublicKey)
     default:
-        fmt.Println("invalid crypto type")
+        log.Println("Invalid crypto type:", validationAlgorithm.GetValidationSuite())
         return false
     }
 
@@ -114,7 +115,7 @@ func (p RSAProcessor) CanVerify(msg messages.MessageWrapper) bool {
         }
         return true
     default:
-        fmt.Println("invalid crypto type")
+        log.Println("Invalid crypto type")
         return false
     }
 
