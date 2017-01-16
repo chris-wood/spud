@@ -54,8 +54,8 @@ func NewRSAProcessor(keySize int) (RSAProcessor, error) {
 }
 
 func NewRSAProcessorWithKey(key *rsa.PrivateKey) (RSAProcessor, error) {
-    publicKey := privateKey.PublicKey
-    return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
+    publicKey := key.PublicKey
+    return RSAProcessor{privateKey: key, publicKey: publicKey}, nil
 }
 
 func (p RSAProcessor) Sign(msg messages.MessageWrapper) ([]byte, error) {

@@ -23,7 +23,8 @@ func generateResponse(name string, response []byte) []byte {
 }
 
 func testStack() {
-    myStack := stack.Create(`{"link": "loopback"}`)
+    // myStack := stack.Create(`{"link": "loopback"}`)
+    myStack := stack.Create(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
     api := adapter.NewNameAPI(myStack)
 
     api.Serve("ccnx:/hello/spud", generateResponse)

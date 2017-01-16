@@ -1,9 +1,9 @@
 package stack
 
-// import "fmt"
 import "log"
-import "ioutil"
+import "io/ioutil"
 
+import "crypto/x509"
 import "encoding/pem"
 import "encoding/json"
 
@@ -163,14 +163,14 @@ func Create(config string) *Stack {
     // 3.5. create the right crypto processors
     keyList, ok := configMap["keys"]
     if ok {
-        for _, keyFileName := range(keyList.(string)) {
-            keyData, err := ioutil.ReadFile(keyFileName)
-            block := pem.Decode(keyData)
-            privateKey, parseError := ParsePKCS1PrivateKey(block.Bytes)
+        for _, keyFileName := range(keyList.([]interface {})) {
+            keyData, err := ioutil.ReadFile(keyFileName.(string))
+            block, _ := pem.Decode(keyData)
+            privateKey, parseError := x509.ParsePKCS1PrivateKey(block.Bytes)
             if parseError != nil {
                 log.Printf("Failed to parse private key: %s", err)
             } else {
-                rsaProcessor, _ := NewRSAProcessorWithKey(privateKey)
+                rsaProcessor, _ := processor.NewRSAProcessorWithKey(privateKey)
                 cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
             }
         }
