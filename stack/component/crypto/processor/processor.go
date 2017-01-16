@@ -53,6 +53,11 @@ func NewRSAProcessor(keySize int) (RSAProcessor, error) {
     return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
+func NewRSAProcessorWithKey(key *rsa.PrivateKey) (RSAProcessor, error) {
+    publicKey := privateKey.PublicKey
+    return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
+}
+
 func (p RSAProcessor) Sign(msg messages.MessageWrapper) ([]byte, error) {
     digest := msg.HashProtectedRegion(sha256.New())
     signature, err := rsa.SignPKCS1v15(rand.Reader, p.privateKey, crypto.SHA256, digest)

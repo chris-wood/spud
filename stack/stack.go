@@ -2,7 +2,9 @@ package stack
 
 // import "fmt"
 import "log"
+import "ioutil"
 
+import "encoding/pem"
 import "encoding/json"
 
 import tlvCodec "github.com/chris-wood/spud/codec"
@@ -155,12 +157,27 @@ func Create(config string) *Stack {
     codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
     // 3. create crypto component
-    // XXX: the processor information would be pulled from the configuration file
-    // XXX: check crypto processor errors here
-    rsaProcessor, _ := processor.NewRSAProcessor(2048)
     cryptoContext := context.NewCryptoContext()
     cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
-    cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
+
+    // 3.5. create the right crypto processors
+    keyList, ok := configMap["keys"]
+    if ok {
+        for _, keyFileName := range(keyList.(string)) {
+            keyData, err := ioutil.ReadFile(keyFileName)
+            block := pem.Decode(keyData)
+            privateKey, parseError := ParsePKCS1PrivateKey(block.Bytes)
+            if parseError != nil {
+                log.Printf("Failed to parse private key: %s", err)
+            } else {
+                rsaProcessor, _ := NewRSAProcessorWithKey(privateKey)
+                cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
+            }
+        }
+    } else {
+        rsaProcessor, _ := processor.NewRSAProcessor(2048)
+        cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
+    }
 
     // 4. assemble the stack
     stack := &Stack{
