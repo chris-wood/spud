@@ -54,9 +54,7 @@ func NewRSAProcessor(keySize int) (RSAProcessor, error) {
 
 func (p RSAProcessor) Sign(msg messages.MessageWrapper) ([]byte, error) {
     digest := msg.HashProtectedRegion(sha256.New())
-    fmt.Println("Signing: ", digest)
     signature, err := rsa.SignPKCS1v15(rand.Reader, p.privateKey, crypto.SHA256, digest)
-    fmt.Println("Signature:", signature)
     return signature, err
 }
 
@@ -84,12 +82,8 @@ func (p RSAProcessor) Verify(request, response messages.MessageWrapper) bool {
     signature := validationPayload.Value()
     digest := response.HashProtectedRegion(sha256.New())
 
-    fmt.Println("Verifying: ", digest)
-    fmt.Println("Signature:", signature)
-
     err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest, signature)
-    fmt.Println("Valid?", err)
-    return err != nil
+    return err == nil
 }
 
 func (p RSAProcessor) ProcessorDetails() validation.ValidationAlgorithm {

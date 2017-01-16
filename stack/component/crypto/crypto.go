@@ -1,6 +1,8 @@
 package crypto
 
 import "fmt"
+import "log"
+
 import tlvCodec "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/interest"
@@ -51,16 +53,18 @@ func (c *CryptoComponent) AddCryptoProcessor(pattern string, proc processor.Cryp
     c.cryptoContext.AddTrustedKey(validationAlgorithm.KeyIdString(), validationAlgorithm.GetPublicKey())
 }
 
-func addAuthenticator(msg messages.MessageWrapper, proc processor.CryptoProcessor) (messages.MessageWrapper, error) {
+func addAuthenticator(msg *messages.MessageWrapper, proc processor.CryptoProcessor) (messages.MessageWrapper, error) {
     va := proc.ProcessorDetails()
     msg.SetValidationAlgorithm(va)
-    signature, err := proc.Sign(msg)
-    if err != nil {
+    signature, err := proc.Sign(*msg)
+    if err == nil {
         vp := validation.NewValidationPayload(signature)
         msg.SetValidationPayload(vp)
+    } else {
+        log.Println("Error:", err)
     }
 
-    return msg, err
+    return *msg, err
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
@@ -73,7 +77,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
         // if !msg.IsRequest() {
 
         var err error
-        msg, err = addAuthenticator(msg, c.cryptoProcessor)
+        msg, err = addAuthenticator(&msg, c.cryptoProcessor)
         if err != nil {
             fmt.Println(err.Error())
         }
