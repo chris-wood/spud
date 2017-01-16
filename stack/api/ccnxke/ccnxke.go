@@ -8,6 +8,7 @@ import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/util"
 import "github.com/chris-wood/spud/stack/api/esic"
 import "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/kex"
 import "github.com/chris-wood/spud/messages/interest"
@@ -44,11 +45,12 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     bareHello := kex.KEXHello()
     bareHelloRequest := interest.CreateWithName(bareHelloName)
     bareHelloRequest.AddContainer(bareHello)
-    api.kexStack.Enqueue(bareHelloRequest)
+    api.kexStack.Enqueue(messages.InterestWrapper(bareHelloRequest))
 
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
-    reply := api.kexStack.Dequeue()
+    replyWrapper := api.kexStack.Dequeue()
+    reply := replyWrapper.InnerMessage()
     log.Println("Got the REJECT")
 
     reject, err := reply.GetContainer(codec.T_KEX)
@@ -64,11 +66,12 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 
     helloRequest := interest.CreateWithName(helloName)
     helloRequest.AddContainer(hello)
-    api.kexStack.Enqueue(helloRequest)
+    api.kexStack.Enqueue(messages.InterestWrapper(helloRequest))
 
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
-    reply = api.kexStack.Dequeue()
+    replyWrapper = api.kexStack.Dequeue()
+    reply = replyWrapper.InnerMessage()
 
     accept, err := reply.GetContainer(codec.T_KEX)
     if err != nil {
@@ -99,7 +102,8 @@ func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
 
 func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback, macKey, encKey []byte) {
     for ;; {
-        request := api.kexStack.Dequeue()
+        requestWrapper := api.kexStack.Dequeue()
+        request := requestWrapper.InnerMessage()
         if !prefix.IsPrefix(request.Name()) {
             break
         }
@@ -113,7 +117,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             reject := kex.KEXHelloReject(kexContainer, macKey)
             rejectResponse := content.CreateWithName(request.Name())
             rejectResponse.AddContainer(reject)
-            api.kexStack.Enqueue(rejectResponse)
+            api.kexStack.Enqueue(messages.ContentWrapper(rejectResponse))
             break
 
         case codec.T_KEX_HELLO:
@@ -126,7 +130,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
             acceptResponse := content.CreateWithName(request.Name())
             acceptResponse.AddContainer(accept)
-            api.kexStack.Enqueue(acceptResponse)
+            api.kexStack.Enqueue(messages.ContentWrapper(acceptResponse))
 
             // XXX: go to the KDF step
 

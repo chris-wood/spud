@@ -8,7 +8,8 @@ func generateResponse(prefix string, payload []byte) []byte {
 }
 
 func serve(prefix string) {
-    myStack := stack.Create("")
+    myStack := stack.Create(`{"connector": "athena", "link": "tcp", "fwd-address": "127.0.0.1:9696"}`)
+    // myStack := stack.CreateTest()
     api := adapter.NewNameAPI(myStack)
 
     done := make(chan int)

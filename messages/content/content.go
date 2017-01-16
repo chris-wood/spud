@@ -1,12 +1,10 @@
 package content
 
 import "fmt"
-import "hash"
-import "crypto/sha256"
+// import "hash"
 
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/kex"
-import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
 
@@ -16,10 +14,6 @@ type Content struct {
     payloadType uint8
 
     containers []codec.TLV
-
-    // Validation information
-    validationAlgorithm validation.ValidationAlgorithm
-    validationPayload validation.ValidationPayload
 }
 
 type contentError struct {
@@ -62,8 +56,6 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
     var result Content
     var contentName name.Name
     var dataPayload payload.Payload
-    var validationAlgorithm validation.ValidationAlgorithm
-    var validationPayload validation.ValidationPayload
     var err error
 
     containers := make([]codec.TLV, 0)
@@ -82,20 +74,12 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
                 return nil, contentError{"Unable to decode the KEX TLV"}
             }
             containers = append(containers, kex)
-        } else if tlv.Type() == codec.T_VALALG {
-            validationAlgorithm, err = validation.CreateFromTLV(tlv)
-            if err != nil {
-                return &result, err
-            }
-        } else if tlv.Type() == codec.T_VALPAYLOAD {
-            validationPayload = validation.NewValidationPayload(tlv.Value())
         } else {
             fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
         }
     }
 
-    return &Content{name: contentName, dataPayload: dataPayload, validationAlgorithm: validationAlgorithm,
-        validationPayload: validationPayload, containers: containers}, nil
+    return &Content{name: contentName, dataPayload: dataPayload, containers: containers}, nil
 }
 
 // Containers
@@ -135,14 +119,6 @@ func (c Content) Length() uint16 {
         length += c.dataPayload.Length() + 4
     }
 
-    if c.validationAlgorithm.Length() > 0 {
-        length += c.validationAlgorithm.Length() + 4
-    }
-
-    if c.validationPayload.Length() > 0 {
-        length += c.validationPayload.Length() + 4
-    }
-
     for _, container := range(c.containers) {
         length += container.Length() + 4
     }
@@ -162,14 +138,6 @@ func (c Content) Value() []byte {
         value = append(value, e.EncodeTLV(c.dataPayload)...)
     }
 
-    if c.validationAlgorithm.Length() > 0 {
-        value = append(value, e.EncodeTLV(c.validationAlgorithm)...)
-    }
-
-    if c.validationPayload.Length() > 0 {
-        value = append(value, e.EncodeTLV(c.validationPayload)...)
-    }
-
     for _, container := range(c.containers) {
         value = append(value, e.EncodeTLV(container)...)
     }
@@ -178,7 +146,7 @@ func (c Content) Value() []byte {
 }
 
 func (c Content) Children() []codec.TLV {
-    children := []codec.TLV{c.name, c.dataPayload, c.validationAlgorithm, c.validationPayload}
+    children := []codec.TLV{c.name, c.dataPayload}
     for _, container := range(c.containers) {
         children = append(children, container)
     }
@@ -186,17 +154,11 @@ func (c Content) Children() []codec.TLV {
 }
 
 func (c Content) String() string {
-    return c.Identifier()
+    // return Identifier(c)
+    return c.name.String()
 }
 
 // Message functions
-
-func (c Content) ComputeMessageHash(hasher hash.Hash) []byte {
-    encoder := codec.Encoder{}
-    bytes := encoder.EncodeTLV(c)
-    hasher.Write(bytes)
-    return hasher.Sum(nil)
-}
 
 func (c Content) Encode() []byte {
     encoder := codec.Encoder{}
@@ -206,38 +168,6 @@ func (c Content) Encode() []byte {
 
 func (c Content) Name() name.Name {
     return c.name
-}
-
-func (c Content) Identifier() string {
-    if c.name.Length() > 0 {
-        return c.name.String()
-    } else {
-        hash := c.ComputeMessageHash(sha256.New())
-        return string(hash)
-    }
-}
-
-func (c Content) NamelessIdentifier() string {
-    hash := c.ComputeMessageHash(sha256.New())
-    return string(hash)
-}
-
-func (c Content) HashProtectedRegion(hasher hash.Hash) []byte {
-    encoder := codec.Encoder{}
-
-    value := make([]byte, 0)
-    if c.name.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(c.name)...)
-    }
-    if c.dataPayload.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(c.dataPayload)...)
-    }
-    if c.validationAlgorithm.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(c.validationAlgorithm)...)
-    }
-
-    hasher.Write(value)
-    return hasher.Sum(nil)
 }
 
 func (c Content) GetPacketType() uint16 {
@@ -250,20 +180,4 @@ func (c Content) Payload() payload.Payload {
 
 func (c Content) PayloadType() uint8 {
     return c.payloadType
-}
-
-func (c *Content) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
-    c.validationAlgorithm = va
-}
-
-func (c *Content) SetValidationPayload(vp validation.ValidationPayload) {
-    c.validationPayload = vp
-}
-
-func (c Content) GetValidationAlgorithm() validation.ValidationAlgorithm {
-    return c.validationAlgorithm
-}
-
-func (c Content) GetValidationPayload() validation.ValidationPayload {
-    return c.validationPayload
 }

@@ -1,14 +1,14 @@
 package interest
 
 import "fmt"
-import "hash"
+// import "hash"
+
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/kex"
 import typedhash "github.com/chris-wood/spud/messages/hash"
 import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/payload"
-import "github.com/chris-wood/spud/messages/validation"
 
 type Interest struct {
     name name.Name
@@ -24,10 +24,6 @@ type Interest struct {
 
     // KEX signalling and encryption information
     kexMessage kex.KEX
-
-    // Validation information
-    validationAlgorithm validation.ValidationAlgorithm
-    validationPayload validation.ValidationPayload
 }
 
 type interestError struct {
@@ -188,35 +184,10 @@ func (i Interest) NamelessIdentifier() string {
     return result
 }
 
-func (i Interest) ComputeMessageHash(hasher hash.Hash) []byte {
-    return make([]byte, 0)
-}
-
 func (i Interest) Encode() []byte {
     encoder := codec.Encoder{}
     bytes := encoder.EncodeTLV(i)
     return bytes
-}
-
-func (i Interest) HashProtectedRegion(hasher hash.Hash) []byte {
-    encoder := codec.Encoder{}
-
-    value := encoder.EncodeTLV(i.name)
-    if i.keyId.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.keyId)...)
-    }
-    if i.contentId.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.contentId)...)
-    }
-    if i.dataPayload.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.dataPayload)...)
-    }
-    if i.validationAlgorithm.Length() > 0 {
-        value = append(value, encoder.EncodeTLV(i.validationAlgorithm)...)
-    }
-
-    hasher.Write(value)
-    return hasher.Sum(nil)
 }
 
 func (i Interest) GetPacketType() uint16 {
@@ -229,20 +200,4 @@ func (i Interest) Payload() payload.Payload {
 
 func (i Interest) PayloadType() uint8 {
     return i.payloadType
-}
-
-func (i *Interest) SetValidationAlgorithm(va validation.ValidationAlgorithm) {
-    i.validationAlgorithm = va
-}
-
-func (i *Interest) SetValidationPayload(vp validation.ValidationPayload) {
-    i.validationPayload = vp
-}
-
-func (i Interest) GetValidationAlgorithm() validation.ValidationAlgorithm {
-    return i.validationAlgorithm
-}
-
-func (i Interest) GetValidationPayload() validation.ValidationPayload {
-    return i.validationPayload
 }

@@ -14,9 +14,9 @@ import "hash"
 import "fmt"
 
 type CryptoProcessor interface {
-    CanVerify(msg messages.Message) bool
-    Sign(msg messages.Message) ([]byte, error)
-    Verify(request, response messages.Message) bool
+    CanVerify(msg messages.MessageWrapper) bool
+    Sign(msg messages.MessageWrapper) ([]byte, error)
+    Verify(request, response messages.MessageWrapper) bool
 
     ProcessorDetails() validation.ValidationAlgorithm
     Hasher() hash.Hash
@@ -52,13 +52,15 @@ func NewRSAProcessor(keySize int) (RSAProcessor, error) {
     return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
-func (p RSAProcessor) Sign(msg messages.Message) ([]byte, error) {
+func (p RSAProcessor) Sign(msg messages.MessageWrapper) ([]byte, error) {
     digest := msg.HashProtectedRegion(sha256.New())
+    fmt.Println("Signing: ", digest)
     signature, err := rsa.SignPKCS1v15(rand.Reader, p.privateKey, crypto.SHA256, digest)
+    fmt.Println("Signature:", signature)
     return signature, err
 }
 
-func (p RSAProcessor) Verify(request, response messages.Message) bool {
+func (p RSAProcessor) Verify(request, response messages.MessageWrapper) bool {
     validationPayload := response.GetValidationPayload()
     validationAlgorithm := response.GetValidationAlgorithm()
 
@@ -82,7 +84,11 @@ func (p RSAProcessor) Verify(request, response messages.Message) bool {
     signature := validationPayload.Value()
     digest := response.HashProtectedRegion(sha256.New())
 
+    fmt.Println("Verifying: ", digest)
+    fmt.Println("Signature:", signature)
+
     err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest, signature)
+    fmt.Println("Valid?", err)
     return err != nil
 }
 
@@ -102,7 +108,7 @@ func (p RSAProcessor) Hasher() hash.Hash {
     return sha256.New()
 }
 
-func (p RSAProcessor) CanVerify(msg messages.Message) bool {
+func (p RSAProcessor) CanVerify(msg messages.MessageWrapper) bool {
     validationAlgorithm := msg.GetValidationAlgorithm()
 
     switch validationAlgorithm.GetValidationSuite() {

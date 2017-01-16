@@ -18,7 +18,7 @@ func (e validationPayloadError) Error() string {
 // Constructor functions
 
 func NewValidationPayload(bytes []byte) ValidationPayload {
-    return ValidationPayload{}
+    return ValidationPayload{bytes}
 }
 
 // TLV interface functions

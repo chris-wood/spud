@@ -66,8 +66,8 @@ func NewESIC(stack *stack.Stack, masterSecret []byte, sessionID string) *ESIC {
 }
 
 func (n *ESIC) Serve(prefix string, callback RequestCallback) {
-    n.apiStack.Service(prefix, func(msg messages.Message) {
-        encryptedPayload := msg.Payload().Value()
+    n.apiStack.Service(prefix, func(msg messages.MessageWrapper) {
+        encryptedPayload := msg.InnerMessage().Payload().Value()
 
         // Decrypt the interest
         nonce := make([]byte, 12) // all zeros to start
@@ -88,11 +88,12 @@ func (n *ESIC) Serve(prefix string, callback RequestCallback) {
 
         data := callback(prefix, responseMsg.Payload().Value())
         dataPayload := payload.Create(data)
-        response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
+        response := messages.ContentWrapper(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
 
         // Encode and encrypt the content response
-        e := codec.Encoder{}
-        encodedResponse := e.EncodeTLV(response)
+        // e := codec.Encoder{}
+        // encodedResponse := e.EncodeTLV(response)
+        encodedResponse := response.Encode()
 
         // Encrypt the response
         nonce = make([]byte, 12) // all zeros to start
@@ -100,7 +101,7 @@ func (n *ESIC) Serve(prefix string, callback RequestCallback) {
 
         // Encap the response and send it downstream
         wrappedPayload := payload.Create(encryptedResponse)
-        encapResponse := content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload)
+        encapResponse := messages.ContentWrapper(content.CreateWithNameAndTypedPayload(msg.Name(), codec.T_PAYLOADTYPE_ENCAP, wrappedPayload))
 
         n.apiStack.Enqueue(encapResponse)
     })
@@ -109,10 +110,11 @@ func (n *ESIC) Serve(prefix string, callback RequestCallback) {
 func (n *ESIC) Get(nameString string, callback ResponseCallback) {
     requestName, err := name.Parse(nameString)
     if err == nil {
-        request := interest.CreateWithName(requestName)
+        request := messages.InterestWrapper(interest.CreateWithName(requestName))
 
-        e := codec.Encoder{}
-        encodedRequest := e.EncodeTLV(request)
+        // e := codec.Encoder{}
+        // encodedRequest := e.EncodeTLV(request)
+        encodedRequest := request.Encode()
 
         // Encrypt the interest
         nonce := make([]byte, 12) // all zeros to start
@@ -122,10 +124,10 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
         sessionName, _ := baseName.AppendComponent(n.sessionID)
 
         encapPayload := payload.Create(encryptedInterest)
-        encapInterest := interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload)
+        encapInterest := messages.InterestWrapper(interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload))
 
-        n.apiStack.Get(encapInterest, func(msg messages.Message) {
-            encryptedPayload := msg.Payload().Value()
+        n.apiStack.Get(encapInterest, func(msg messages.MessageWrapper) {
+            encryptedPayload := msg.InnerMessage().Payload().Value()
 
             // Decrypt the interest
             nonce := make([]byte, 12) // all zeros to start
@@ -145,7 +147,7 @@ func (n *ESIC) Get(nameString string, callback ResponseCallback) {
                 return  // handle this as needed
             }
 
-            callback(responseMsg.Payload().Value())
+            callback(responseMsg.InnerMessage().Payload().Value())
         })
     }
 }

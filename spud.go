@@ -23,7 +23,7 @@ func generateResponse(name string, response []byte) []byte {
 }
 
 func testStack() {
-    myStack := stack.Create("")
+    myStack := stack.Create(`{"link": "loopback"}`)
     api := adapter.NewNameAPI(myStack)
 
     api.Serve("ccnx:/hello/spud", generateResponse)
@@ -53,7 +53,7 @@ func ConsumerSessionHandler(session *esic.ESIC) {
 }
 
 func testSession() {
-    myStack := stack.Create("")
+    myStack := stack.Create(`{"link": "loopback"}`)
     api := ccnxke.NewCCNxKEAPI(myStack)
     done = make(chan int)
 
@@ -66,6 +66,6 @@ func testSession() {
 }
 
 func main() {
-    //testStack()
-    testSession()
+    testStack()
+    // testSession()
 }

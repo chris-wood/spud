@@ -25,19 +25,19 @@ func NewNameAPI(s *stack.Stack) *NameAPI {
 func (n *NameAPI) Get(nameString string, callback ResponseCallback) {
     requestName, err := name.Parse(nameString)
     if err == nil {
-        request := interest.CreateWithName(requestName)
-        n.apiStack.Get(request, func(msg messages.Message) {
-            callback(msg.Payload().Value())
+        request := messages.InterestWrapper(interest.CreateWithName(requestName))
+        n.apiStack.Get(request, func(msg messages.MessageWrapper) {
+            callback(msg.InnerMessage().Payload().Value())
         })
     }
 }
 
 func (n *NameAPI) Serve(nameString string, callback RequestCallback) {
-    n.apiStack.Service(nameString, func(msg messages.Message) {
+    n.apiStack.Service(nameString, func(msg messages.MessageWrapper) {
         encapPayload := msg.Payload().Value()
         data := callback(msg.Identifier(), encapPayload)
         dataPayload := payload.Create(data)
-        response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
+        response := messages.ContentWrapper(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
         n.apiStack.Enqueue(response)
     })
 }

@@ -1,6 +1,7 @@
 package stack
 
 // import "fmt"
+import "log"
 
 import "encoding/json"
 
@@ -16,12 +17,12 @@ import "github.com/chris-wood/spud/stack/component/crypto"
 import "github.com/chris-wood/spud/stack/component/crypto/processor"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
 
-type MessageCallback func(msg messages.Message)
+type MessageCallback func(msg messages.MessageWrapper)
 
 type Component interface {
     // XXX: rename to Push and Pop, respectively
-    Enqueue(messages.Message)
-    Dequeue() messages.Message
+    Enqueue(messages.MessageWrapper)
+    Dequeue() messages.MessageWrapper
     ProcessEgressMessages()
     ProcessIngressMessages()
 }
@@ -29,19 +30,19 @@ type Component interface {
 type Stack struct {
     components []Component
     pendingMap map[string]MessageCallback
-    pendingQueue chan messages.Message
+    pendingQueue chan messages.MessageWrapper
     prefixTable lpm.LPM
 }
 
-func (s *Stack) Enqueue(msg messages.Message) {
+func (s *Stack) Enqueue(msg messages.MessageWrapper) {
     s.components[0].Enqueue(msg)
 }
 
-func (s *Stack) Dequeue() messages.Message {
+func (s *Stack) Dequeue() messages.MessageWrapper {
     return <- s.pendingQueue
 }
 
-func (s *Stack) Get(msg messages.Message, callback MessageCallback) {
+func (s *Stack) Get(msg messages.MessageWrapper, callback MessageCallback) {
     if (msg.GetPacketType() != tlvCodec.T_INTEREST) {
         return
     }
@@ -136,9 +137,14 @@ func Create(config string) *Stack {
         }
         break
     case "loopback":
+        fallthrough
     default:
         fc, _ = connector.NewLoopbackForwarderConnector()
         break
+    }
+
+    if fc == nil {
+        log.Panic("Catastrophic failure: a connector was not created.")
     }
 
     // 1.5. create the shared data structures
@@ -159,7 +165,7 @@ func Create(config string) *Stack {
     // 4. assemble the stack
     stack := &Stack{
         components: []Component{cryptoComponent, codecComponent},
-        pendingQueue: make(chan messages.Message, 10000), // random constant -- make this configurable
+        pendingQueue: make(chan messages.MessageWrapper, 10000), // random constant -- make this configurable
         pendingMap: make(map[string]MessageCallback),
         prefixTable: lpm.LPM{},
     }
@@ -172,4 +178,8 @@ func Create(config string) *Stack {
     go stack.processInputQueue()
 
     return stack
+}
+
+func CreateTest() *Stack {
+    return Create(`{"link": "loopback"}`)
 }

@@ -14,6 +14,7 @@ func displayResponse(response []byte) {
 
 func get(name string) {
     myStack := stack.Create(`{"connector": "athena", "link": "tcp", "fwd-address": "127.0.0.1:9695"}`)
+    // myStack := stack.CreateTest()
     api := adapter.NewNameAPI(myStack)
 
     done = make(chan int)
