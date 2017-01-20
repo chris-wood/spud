@@ -1,7 +1,6 @@
 package main
 
 import "fmt"
-import "time"
 
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/stack/api/adapter"
@@ -28,15 +27,20 @@ func testStack() {
     api := adapter.NewNameAPI(myStack)
 
     api.Serve("ccnx:/hello/spud", generateResponse)
-    api.Get("ccnx:/hello/spud", displayResponse)
-
-    for ;; {
-        if count == 0 {
-            time.Sleep(100 * time.Millisecond)
-        } else {
-            break
-        }
+    err := api.Get("ccnx:/hello/spud", displayResponse)
+    if err != nil {
+        fmt.Println(err)
+    } else {
+        fmt.Println("Success!")
     }
+
+    // for ;; {
+    //     if count == 0 {
+    //         time.Sleep(100 * time.Millisecond)
+    //     } else {
+    //         break
+    //     }
+    // }
 }
 
 

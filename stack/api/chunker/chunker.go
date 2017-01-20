@@ -34,7 +34,6 @@ func (n *ChunkerAPI) Get(nameString string, callback ResponseCallback) {
 
 func (n *ChunkerAPI) Serve(nameString string, callback RequestCallback) {
     n.apiStack.Service(nameString, func(msg messages.Message) {
-        //
         // encapPayload := msg.Payload().Value()
         // data := callback(msg.Identifier(), encapPayload)
         // dataPayload := payload.Create(data)
