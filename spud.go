@@ -1,9 +1,11 @@
 package main
 
 import "fmt"
+import "time"
 
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/stack/api/adapter"
+import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/portal"
 import "github.com/chris-wood/spud/stack/api/ccnxke"
 import "github.com/chris-wood/spud/stack/api/esic"
 
@@ -22,15 +24,16 @@ func generateResponse(name string, response []byte) []byte {
 }
 
 func testStack() {
-    // myStack := stack.Create(`{"link": "loopback"}`)
     myStack, err := stack.CreateRaw(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
     if err != nil {
         panic("Could not create the stack")
     }
-    api := adapter.NewNameAPI(myStack)
+
+    ccnPortal := portal.NewPortal(myStack)
+    api := adapter.NewKVSAPI(ccnPortal)
 
     api.Serve("ccnx:/hello/spud", generateResponse)
-    data, err := api.Get("ccnx:/hello/spud")
+    data, err := api.Get("ccnx:/hello/spud", time.Second)
     if err != nil {
         fmt.Println(err)
     } else {

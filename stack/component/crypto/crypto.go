@@ -141,7 +141,7 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
 
         // XXX: how to identify the right processor? based on the name only?
 
-        if !c.cryptovalidator.CanVerify(msg) {
+        if !c.cryptoProcessor.CanVerify(msg) {
             // Pull out the key name
             // XXX: here we'd swtich on the type of locator
             va := msg.GetValidationAlgorithm()
@@ -157,7 +157,7 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
             // Save the reference to this response
             c.pendingVerificationQueue[keyPacket.Identifier()] = msg
         } else {
-            if c.cryptovalidator.Verify(request, msg) {
+            if c.cryptoProcessor.Verify(request, msg) {
                 c.checkTrustProperties(msg)
             } else {
                 c.dropPendingResponses(msg)
