@@ -33,24 +33,23 @@ func NewNameAPI(s *stack.Stack) *NameAPI {
     return api
 }
 
-func (n *NameAPI) Get(nameString string, callback ResponseCallback) error {
+func (n *NameAPI) Get(nameString string) ([]byte, error) {
     requestName, err := name.Parse(nameString)
     if err == nil {
         request := messages.InterestWrapper(interest.CreateWithName(requestName))
-        signalChannel := make(chan int, 1)
+        signalChannel := make(chan []byte, 1)
         n.apiStack.Get(request, func(msg messages.MessageWrapper) {
-            signalChannel <- 1
-            callback(msg.InnerMessage().Payload().Value())
+            signalChannel <- msg.InnerMessage().Payload().Value()
         })
 
         select {
-        case <- signalChannel:
-            return nil
+        case data := <- signalChannel:
+            return data, nil
         case <-time.After(time.Second * 1):
-            return NameAPIError{0, "Timeout"}
+            return nil, NameAPIError{0, "Timeout"}
         }
     }
-    return err
+    return nil, err
 }
 
 func (n *NameAPI) GetAsync(nameString string, callback ResponseCallback) error {

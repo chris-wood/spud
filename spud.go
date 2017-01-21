@@ -27,22 +27,13 @@ func testStack() {
     api := adapter.NewNameAPI(myStack)
 
     api.Serve("ccnx:/hello/spud", generateResponse)
-    err := api.Get("ccnx:/hello/spud", displayResponse)
+    data, err := api.Get("ccnx:/hello/spud")
     if err != nil {
         fmt.Println(err)
     } else {
-        fmt.Println("Success!")
+        fmt.Println(string(data))
     }
-
-    // for ;; {
-    //     if count == 0 {
-    //         time.Sleep(100 * time.Millisecond)
-    //     } else {
-    //         break
-    //     }
-    // }
 }
-
 
 func ProducerSessionHandler(session *esic.ESIC) {
     session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
