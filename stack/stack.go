@@ -17,7 +17,7 @@ import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto"
-import "github.com/chris-wood/spud/stack/component/crypto/processor"
+import "github.com/chris-wood/spud/stack/component/crypto/validator"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type MessageCallback func(msg messages.MessageWrapper)
@@ -32,13 +32,14 @@ type Component interface {
 
 type Stack struct {
     components []Component
+    head Component
     pendingMap map[string]MessageCallback
     pendingQueue chan messages.MessageWrapper
     prefixTable lpm.LPM
 }
 
 func (s *Stack) Enqueue(msg messages.MessageWrapper) {
-    s.components[0].Enqueue(msg)
+    s.head.Enqueue(msg)
 }
 
 func (s *Stack) Dequeue() messages.MessageWrapper {
@@ -54,7 +55,7 @@ func (s *Stack) Get(msg messages.MessageWrapper, callback MessageCallback) {
     s.pendingMap[msg.Identifier()] = callback
 
     // Enqueue the message into the top of the stack
-    s.components[0].Enqueue(msg)
+    s.head.Enqueue(msg)
 }
 
 func (s *Stack) Service(nameString string, callback MessageCallback) {
@@ -68,7 +69,7 @@ func (s *Stack) Service(nameString string, callback MessageCallback) {
 func (s *Stack) processInputQueue() {
     for ;; {
         // Dequeue messages as they arrive
-        msg := s.components[0].Dequeue()
+        msg := s.head.Dequeue()
 
         switch (msg.GetPacketType()) {
         case tlvCodec.T_INTEREST:
@@ -99,25 +100,13 @@ func (s *Stack) processInputQueue() {
                 s.pendingQueue <- msg
             }
         }
-
-        // // Check to see if there's a pending callback
-        // callback, ok := s.pendingMap[msg.Identifier()]
-        // if ok && msg.GetPacketType() != tlvCodec.T_INTEREST {
-        //     fmt.Println("Calling the response callback")
-        //     callback(msg)
-        // } else {
-        //     // Nope -- enqueue the message in the pending queue to free up
-        //     // space in the first component's channel
-        //     // This will block until it's ready to do something
-        //     s.pendingQueue <- msg
-        // }
     }
 }
 
 func Create(config config.StackConfig) (*Stack, error) {
   var err error
 
-  // 1. create the link
+  // Create the link
   var fc connector.ForwarderConnector
   switch config.Link {
   case "tcp":
@@ -138,18 +127,19 @@ func Create(config config.StackConfig) (*Stack, error) {
       log.Panic("Catastrophic failure: a connector was not created.")
   }
 
-  // 1.5. create the shared data structures
+  // Create the shared data structures
   stackCache := cache.NewCache()
   stackPit := pit.NewPIT()
 
-  // 2. create codec
+  // Create codec
   codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
-  // 3. create crypto component
+  // Create crypto component
+  // XXX: defer validator and encryptor creation to the crypto component
   cryptoContext := context.NewCryptoContext()
   cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
 
-  // 3.5. create the right crypto processors
+  // Create the right crypto processors
   if len(config.Keys) > 0 {
       for _, keyFileName := range(config.Keys) {
           keyData, err := ioutil.ReadFile(keyFileName)
@@ -158,24 +148,25 @@ func Create(config config.StackConfig) (*Stack, error) {
           if parseError != nil {
               log.Printf("Failed to parse private key: %s", err)
           } else {
-              rsaProcessor, _ := processor.NewRSAProcessorWithKey(privateKey)
+              rsaProcessor, _ := validator.NewRSAProcessorWithKey(privateKey)
               cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
           }
       }
   } else {
-      rsaProcessor, _ := processor.NewRSAProcessor(2048)
+      rsaProcessor, _ := validator.NewRSAProcessor(2048)
       cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
   }
 
-  // 4. assemble the stack
+  // Assemble the stack
   stack := &Stack{
       components: []Component{cryptoComponent, codecComponent},
+      head: cryptoComponent,
       pendingQueue: make(chan messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
       pendingMap: make(map[string]MessageCallback),
       prefixTable: lpm.LPM{},
   }
 
-  // 5. start each component
+  // Start each component
   for _, component := range(stack.components) {
       go component.ProcessEgressMessages()
       go component.ProcessIngressMessages()

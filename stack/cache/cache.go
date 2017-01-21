@@ -24,3 +24,12 @@ func (c *Cache) Lookup(identity string) ([]byte, bool) {
     match, ok := c.table[identity]
     return match, ok
 }
+
+func (c *Cache) Delete(identity string) bool {
+    _, ok := c.table[identity]
+    if ok {
+        delete(c.table, identity)
+        return true
+    }
+    return false
+}

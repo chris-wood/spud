@@ -1,4 +1,4 @@
-package processor
+package validator
 
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
