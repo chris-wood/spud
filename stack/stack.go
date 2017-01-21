@@ -11,6 +11,7 @@ import tlvCodec "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/name"
+import "github.com/chris-wood/spud/stack/config"
 import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component/connector"
@@ -113,90 +114,86 @@ func (s *Stack) processInputQueue() {
     }
 }
 
-/*
-{
-    "connector" : "tcp"
-    "keystore": "<path to key store>"
-}
-*/
-func Create(config string) *Stack {
-    // Decode the JSON config
-    var configMap map[string]interface{}
-    if err := json.Unmarshal([]byte(config), &configMap); err != nil {
-        panic(err)
-    }
+func Create(config config.StackConfig) (*Stack, error) {
+  var err error
 
-    var err error
+  // 1. create the link
+  var fc connector.ForwarderConnector
+  switch config.Link {
+  case "tcp":
+      locator := config.FwdAddress
+      fc, err = connector.NewAthenaTCPForwarderConnector(locator)
+      if err != nil {
+          panic(err)
+      }
+      break
+  case "loopback":
+      fallthrough
+  default:
+      fc, _ = connector.NewLoopbackForwarderConnector()
+      break
+  }
 
-    // 1. create the link
-    var fc connector.ForwarderConnector
-    switch configMap["link"].(string) {
-    case "tcp":
-        locator := configMap["fwd-address"].(string)
-        fc, err = connector.NewAthenaTCPForwarderConnector(locator)
-        if err != nil {
-            panic(err)
-        }
-        break
-    case "loopback":
-        fallthrough
-    default:
-        fc, _ = connector.NewLoopbackForwarderConnector()
-        break
-    }
+  if fc == nil {
+      log.Panic("Catastrophic failure: a connector was not created.")
+  }
 
-    if fc == nil {
-        log.Panic("Catastrophic failure: a connector was not created.")
-    }
+  // 1.5. create the shared data structures
+  stackCache := cache.NewCache()
+  stackPit := pit.NewPIT()
 
-    // 1.5. create the shared data structures
-    stackCache := cache.NewCache()
-    stackPit := pit.NewPIT()
+  // 2. create codec
+  codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
-    // 2. create codec
-    codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
+  // 3. create crypto component
+  cryptoContext := context.NewCryptoContext()
+  cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
 
-    // 3. create crypto component
-    cryptoContext := context.NewCryptoContext()
-    cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
+  // 3.5. create the right crypto processors
+  if len(config.Keys) > 0 {
+      for _, keyFileName := range(config.Keys) {
+          keyData, err := ioutil.ReadFile(keyFileName)
+          block, _ := pem.Decode(keyData)
+          privateKey, parseError := x509.ParsePKCS1PrivateKey(block.Bytes)
+          if parseError != nil {
+              log.Printf("Failed to parse private key: %s", err)
+          } else {
+              rsaProcessor, _ := processor.NewRSAProcessorWithKey(privateKey)
+              cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
+          }
+      }
+  } else {
+      rsaProcessor, _ := processor.NewRSAProcessor(2048)
+      cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
+  }
 
-    // 3.5. create the right crypto processors
-    keyList, ok := configMap["keys"]
-    if ok {
-        for _, keyFileName := range(keyList.([]interface {})) {
-            keyData, err := ioutil.ReadFile(keyFileName.(string))
-            block, _ := pem.Decode(keyData)
-            privateKey, parseError := x509.ParsePKCS1PrivateKey(block.Bytes)
-            if parseError != nil {
-                log.Printf("Failed to parse private key: %s", err)
-            } else {
-                rsaProcessor, _ := processor.NewRSAProcessorWithKey(privateKey)
-                cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
-            }
-        }
-    } else {
-        rsaProcessor, _ := processor.NewRSAProcessor(2048)
-        cryptoComponent.AddCryptoProcessor("/", rsaProcessor)
-    }
+  // 4. assemble the stack
+  stack := &Stack{
+      components: []Component{cryptoComponent, codecComponent},
+      pendingQueue: make(chan messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
+      pendingMap: make(map[string]MessageCallback),
+      prefixTable: lpm.LPM{},
+  }
 
-    // 4. assemble the stack
-    stack := &Stack{
-        components: []Component{cryptoComponent, codecComponent},
-        pendingQueue: make(chan messages.MessageWrapper, 10000), // random constant -- make this configurable
-        pendingMap: make(map[string]MessageCallback),
-        prefixTable: lpm.LPM{},
-    }
+  // 5. start each component
+  for _, component := range(stack.components) {
+      go component.ProcessEgressMessages()
+      go component.ProcessIngressMessages()
+  }
+  go stack.processInputQueue()
 
-    // 5. start each component
-    for _, component := range(stack.components) {
-        go component.ProcessEgressMessages()
-        go component.ProcessIngressMessages()
-    }
-    go stack.processInputQueue()
-
-    return stack
+  return stack, nil
 }
 
-func CreateTest() *Stack {
-    return Create(`{"link": "loopback"}`)
+func CreateRaw(configString string) (*Stack, error) {
+    var configStruct config.StackConfig
+    err := json.Unmarshal([]byte(configString), &configStruct)
+    if err == nil {
+        return Create(configStruct)
+    }
+    return nil, err
+}
+
+func CreateTest() (*Stack, error) {
+    return CreateRaw(`{"link": "loopback"}`)
 }

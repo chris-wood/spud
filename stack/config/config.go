@@ -1,7 +1,8 @@
 package config
 
-// import "encoding/json"
-
 type StackConfig struct {
-    // XXX: json struct containing the thing
+  Link string
+  FwdAddress string
+  Keys []string
+  PendingBufferSize uint64
 }

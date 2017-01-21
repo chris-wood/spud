@@ -1,7 +1,6 @@
 package codec
 
 import "log"
-import "io/ioutil"
 
 import "encoding/binary"
 import "github.com/chris-wood/spud/messages"
@@ -81,7 +80,6 @@ func (c CodecComponent) ProcessEgressMessages() {
             c.stackCache.Insert(msg.Identifier(), wireFormat)
 
             log.Println("Sending encoded content response", wireFormat)
-            ioutil.WriteFile("/tmp/packet", wireFormat, 0644)
 
             c.connector.Write(wireFormat)
         } else if messageType == codec.T_INTEREST {
