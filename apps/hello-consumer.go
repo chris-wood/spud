@@ -3,7 +3,8 @@ package main
 import "fmt"
 
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/stack/api/adapter"
+import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/portal"
 
 var done chan int
 
@@ -13,15 +14,16 @@ func displayResponse(response []byte) {
 }
 
 func get(name string) {
-    myStack := stack.Create(`{"connector": "athena", "link": "tcp", "fwd-address": "127.0.0.1:9695", "keys": ["key.p12"]}`)
+    myStack, _ := stack.CreateRaw(`{"connector": "athena", "link": "tcp", "fwd-address": "127.0.0.1:9695", "keys": ["key.p12"]}`)
     // myStack := stack.Create(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
     // myStack := stack.CreateTest()
-    api := adapter.NewNameAPI(myStack)
+    ccnPortal := portal.NewPortal(myStack)
+    api := adapter.NewKVSAPI(ccnPortal)
 
     done = make(chan int)
 
     fmt.Println("Fetching now...")
-    api.Get(name, displayResponse)
+    api.GetAsync(name, displayResponse)
 
     <- done
 }

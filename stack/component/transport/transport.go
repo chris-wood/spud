@@ -9,7 +9,7 @@ type TransportComponent struct {
     egress chan messages.MessageWrapper
 }
 
-func NewTransportComponent(downstream ) TransportComponent {
+func NewTransportComponent() TransportComponent {
     egress := make(chan messages.MessageWrapper)
     ingress := make(chan messages.MessageWrapper)
 

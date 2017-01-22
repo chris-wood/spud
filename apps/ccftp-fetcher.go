@@ -4,7 +4,8 @@ import "flag"
 import "fmt"
 
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/stack/api/adapter"
+import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/portal"
 
 type CCFTPFetcher struct {
     prefix string
@@ -15,12 +16,13 @@ func displayResponse(response []byte) {
 }
 
 func (f CCFTPFetcher) fetch(file string) {
-    myStack := stack.Create("")
-    api := adapter.NewNameAPI(myStack)
+    myStack, _ := stack.CreateRaw("")
+    ccnPortal := portal.NewPortal(myStack)
+    api := adapter.NewKVSAPI(ccnPortal)
 
     // XXX: build the name based on the prefix and file
 
-    api.Get("ccnx:/hello/spud", displayResponse)
+    api.GetAsync("ccnx:/hello/spud", displayResponse)
 }
 
 func main() {

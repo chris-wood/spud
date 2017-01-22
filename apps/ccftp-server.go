@@ -5,7 +5,8 @@ import "flag"
 import "strings"
 
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/stack/api/adapter"
+import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/portal"
 
 type CCFTPServer struct {
     prefix string
@@ -36,8 +37,9 @@ func (s CCFTPServer) loadFile(name string, response []byte) []byte {
 }
 
 func (s CCFTPServer) serve(directory string) {
-    myStack := stack.Create("")
-    api := adapter.NewNameAPI(myStack)
+    myStack, _ := stack.CreateRaw("")
+    ccnPortal := portal.NewPortal(myStack)
+    api := adapter.NewKVSAPI(ccnPortal)
     api.Serve(s.prefix, s.loadFile)
 }
 
