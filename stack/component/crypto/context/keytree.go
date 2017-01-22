@@ -1,11 +1,19 @@
 package context
 
 type KeyTree struct {
-    policyName string
-    keys []Key
+    PolicyName string
+    Keys []Key
     Children []*KeyTree
 }
 
-func CreateKeyTree() (*KeyTree) {
-    return nil, nil
+func CreateKeyTree(policy string) (*KeyTree) {
+    return &KeyTree{policy, nil, nil}
+}
+
+func (tree *KeyTree) AddKey(key Key) {
+    tree.Keys = append(tree.Keys, key)
+}
+
+func (tree *KeyTree) AddChild(child *KeyTree) {
+    tree.Children = append(tree.Children, child)
 }
