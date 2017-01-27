@@ -12,16 +12,16 @@ import "crypto/aes"
 import "crypto/cipher"
 
 type ESIC struct {
-    sessionID string
-    counter int
+	sessionID string
+	counter   int
 
-    writeEncKey []byte
-    writeMacKey []byte
-    readEncKey []byte
-    readMacKey []byte
+	writeEncKey []byte
+	writeMacKey []byte
+	readEncKey  []byte
+	readMacKey  []byte
 
-    WriteCipher cipher.AEAD
-    ReadCipher cipher.AEAD
+	WriteCipher cipher.AEAD
+	ReadCipher  cipher.AEAD
 }
 
 // type RequestCallback func(string, []byte) []byte
@@ -30,36 +30,36 @@ type ESIC struct {
 // XXX: session creation
 
 func NewESIC(masterSecret []byte, sessionID string) *ESIC {
-    WriteCipher, err := aes.NewCipher(masterSecret)
-    if err != nil {
-        panic(err.Error())
-    }
-    writeAEAD, err := cipher.NewGCM(WriteCipher)
-    if err != nil {
-        panic(err.Error())
-    }
+	WriteCipher, err := aes.NewCipher(masterSecret)
+	if err != nil {
+		panic(err.Error())
+	}
+	writeAEAD, err := cipher.NewGCM(WriteCipher)
+	if err != nil {
+		panic(err.Error())
+	}
 
-    ReadCipher, err := aes.NewCipher(masterSecret)
-    if err != nil {
-        panic(err.Error())
-    }
-    readAEAD, err := cipher.NewGCM(ReadCipher)
-    if err != nil {
-        panic(err.Error())
-    }
+	ReadCipher, err := aes.NewCipher(masterSecret)
+	if err != nil {
+		panic(err.Error())
+	}
+	readAEAD, err := cipher.NewGCM(ReadCipher)
+	if err != nil {
+		panic(err.Error())
+	}
 
-    esic := ESIC{
-        sessionID: sessionID,
-        counter: 0,
-        writeMacKey: masterSecret,
-        writeEncKey: masterSecret,
-        readMacKey: masterSecret,
-        readEncKey: masterSecret,
-        WriteCipher: writeAEAD,
-        ReadCipher: readAEAD,
-    }
+	esic := ESIC{
+		sessionID:   sessionID,
+		counter:     0,
+		writeMacKey: masterSecret,
+		writeEncKey: masterSecret,
+		readMacKey:  masterSecret,
+		readEncKey:  masterSecret,
+		WriteCipher: writeAEAD,
+		ReadCipher:  readAEAD,
+	}
 
-    return &esic
+	return &esic
 }
 
 // XXX: add functions for encryption and decryption

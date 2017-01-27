@@ -1,27 +1,25 @@
 package schema
 
 type NameSchema struct {
-    segments []string
+	segments []string
 }
 
 func NewNameSchema(nameString string) NameSchema {
-    var n NameSchema
+	var n NameSchema
 
-    // Parse as necessary...
+	// Parse as necessary...
 
-    return n
+	return n
 }
 
 func (n NameSchema) Matches(other NameSchema) bool {
-    return false
+	return false
 }
 
 func (n NameSchema) IsPrefixOf(other NameSchema) bool {
-    return false
+	return false
 }
 
-
-
 type Schema struct {
-    schema map[string]string // map from regex names to regex names
+	schema map[string]string // map from regex names to regex names
 }

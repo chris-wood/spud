@@ -15,38 +15,38 @@ package validator
 import "fmt"
 
 type Encryptor interface {
-    Encrypt(identifier string, payload []byte) ([]byte, error)
-    Decrypt(identifier string, payload []byte) ([]byte, error)
+	Encrypt(identifier string, payload []byte) ([]byte, error)
+	Decrypt(identifier string, payload []byte) ([]byte, error)
 }
 
 type RSAEncryptor struct {
-    // privateKey *rsa.PrivateKey
-    // publicKey rsa.PublicKey
+	// privateKey *rsa.PrivateKey
+	// publicKey rsa.PublicKey
 }
 
 type processorError struct {
-    problem string
+	problem string
 }
 
 func (p processorError) Error() string {
-    return fmt.Sprintf("%s", p.problem)
+	return fmt.Sprintf("%s", p.problem)
 }
 
 // func NewRSAEncryptor() (RSAEncryptor, error) {
-    // var result RSAProcessor
-    //
-    // if keySize != 2048 && keySize != 4096 {
-    //     return result, processorError{"Invalid key length provided: " + string(keySize)}
-    // }
-    //
-    // privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
-    // if err != nil {
-    //     return result, processorError{"Failed to generate a private key: " + err.Error()}
-    // }
-    //
-    // publicKey := privateKey.PublicKey
-    //
-    // return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
+// var result RSAProcessor
+//
+// if keySize != 2048 && keySize != 4096 {
+//     return result, processorError{"Invalid key length provided: " + string(keySize)}
+// }
+//
+// privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
+// if err != nil {
+//     return result, processorError{"Failed to generate a private key: " + err.Error()}
+// }
+//
+// publicKey := privateKey.PublicKey
+//
+// return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
 // }
 
 // func (p RSAEncryptor) Encrypt(identifier string, payload []byte) ([]byte, error) {

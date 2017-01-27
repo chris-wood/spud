@@ -11,6 +11,7 @@ const KeyTypeBinary uint8 = 2
 
 // Curves
 const KeyCurveP256 uint8 = 0
+
 // ...
 
 // Encryption algorithms
@@ -20,9 +21,9 @@ const KeyEncryptionAlgorithm_RSA_2048_OAEP uint16 = 2
 const KeyEncryptionAlgorithm_RSA_4096_OAEP uint16 = 3
 
 type Key struct {
-    Purpose uint8
-    KeyType uint8
-    Algorithm uint16
+	Purpose   uint8
+	KeyType   uint8
+	Algorithm uint16
 
-    Value interface{}
+	Value interface{}
 }
