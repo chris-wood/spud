@@ -35,7 +35,7 @@ func NewKVSAPI(thePortal *portal.Portal) *KVSAPI {
 func (n *KVSAPI) Get(nameString string, timeout time.Duration) ([]byte, error) {
     requestName, err := name.Parse(nameString)
     if err == nil {
-        request := messages.InterestWrapper(interest.CreateWithName(requestName))
+        request := messages.Package(interest.CreateWithName(requestName))
         response, err := n.p.Get(request, timeout)
         if err == nil {
             return response.Payload().Value(), nil
@@ -49,7 +49,7 @@ func (n *KVSAPI) Get(nameString string, timeout time.Duration) ([]byte, error) {
 func (n *KVSAPI) GetAsync(nameString string, callback ResponseCallback) error {
     requestName, err := name.Parse(nameString)
     if err == nil {
-        request := messages.InterestWrapper(interest.CreateWithName(requestName))
+        request := messages.Package(interest.CreateWithName(requestName))
         n.p.GetAsync(request, func(msg messages.MessageWrapper) {
             callback(msg.Payload().Value())
         })
@@ -62,7 +62,7 @@ func (n *KVSAPI) Serve(nameString string, callback RequestCallback) {
         encapPayload := msg.Payload().Value()
         data := callback(msg.Identifier(), encapPayload)
         dataPayload := payload.Create(data)
-        response := messages.ContentWrapper(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
+        response := messages.Package(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
         return response
     })
 }

@@ -53,11 +53,11 @@ const T_KEX_TIMESTAMP uint16 = 0x0008
 const T_KEX_KEYSHARE uint16 = 0x0009
 
 // Payload type
-const T_PAYLOADTYPE_DATA uint8 = 0x00
-const T_PAYLOADTYPE_KEY uint8 = 0x01
-const T_PAYLOADTYPE_LINK uint8 = 0x02
-const T_PAYLOADTYPE_MANIFEST uint8 = 0x03
-const T_PAYLOADTYPE_ENCAP uint8 = 0x04
+const T_PAYLOADTYPE_DATA uint16 = 0x0000
+const T_PAYLOADTYPE_KEY uint16 = 0x0001
+const T_PAYLOADTYPE_LINK uint16 = 0x0002
+const T_PAYLOADTYPE_MANIFEST uint16 = 0x0003
+const T_PAYLOADTYPE_ENCAP uint16 = 0x0004
 
 // Validation fields - crypto suites
 const T_CRC32C uint16 = 0x0002

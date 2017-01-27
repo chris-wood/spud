@@ -16,7 +16,7 @@ type Interest struct {
     contentId typedhash.Hash
 
     // Payload and its type
-    payloadType uint8
+    payloadType uint16
     dataPayload payload.Payload
 
     // codec.TLVs
@@ -40,7 +40,7 @@ func CreateWithName(name name.Name) *Interest {
     return &Interest{name: name, containers: make([]codec.TLV, 0)}
 }
 
-func CreateWithNameAndPayload(name name.Name, payloadType uint8, payloadValue payload.Payload) *Interest {
+func CreateWithNameAndPayload(name name.Name, payloadType uint16, payloadValue payload.Payload) *Interest {
     return &Interest{name: name, payloadType: payloadType, dataPayload: payloadValue}
 }
 
@@ -198,6 +198,6 @@ func (i Interest) Payload() payload.Payload {
     return i.dataPayload
 }
 
-func (i Interest) PayloadType() uint8 {
+func (i Interest) PayloadType() uint16 {
     return i.payloadType
 }

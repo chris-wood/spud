@@ -11,7 +11,7 @@ import "github.com/chris-wood/spud/codec"
 type Content struct {
     name name.Name
     dataPayload payload.Payload
-    payloadType uint8
+    payloadType uint16
 
     containers []codec.TLV
 }
@@ -40,7 +40,7 @@ func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Cont
     return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
-func CreateWithNameAndTypedPayload(name name.Name, payloadType uint8, dataPayload payload.Payload) *Content {
+func CreateWithNameAndTypedPayload(name name.Name, payloadType uint16, dataPayload payload.Payload) *Content {
     return &Content{name: name, dataPayload: dataPayload, payloadType: payloadType, containers: make([]codec.TLV, 0)}
 }
 
@@ -178,6 +178,6 @@ func (c Content) Payload() payload.Payload {
     return c.dataPayload
 }
 
-func (c Content) PayloadType() uint8 {
+func (c Content) PayloadType() uint16 {
     return c.payloadType
 }

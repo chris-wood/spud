@@ -14,6 +14,7 @@ import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/stack/config"
 import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/pit"
+import "github.com/chris-wood/spud/stack/component/tunnel"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
 import "github.com/chris-wood/spud/stack/component/crypto"
@@ -31,8 +32,11 @@ type Component interface {
 }
 
 type Stack struct {
-    components []Component
+    cryptoComponent Component
+    codecComponent Component
     head Component
+    bottom Component
+
     pendingMap map[string]MessageCallback
     pendingQueue chan messages.MessageWrapper
     prefixTable lpm.LPM
@@ -103,6 +107,9 @@ func (s *Stack) processInputQueue() {
     }
 }
 
+func (s *Stack) AddTunnel(tun tunnel.TunnelComponent) {
+}
+
 func Create(config config.StackConfig) (*Stack, error) {
   var err error
 
@@ -133,11 +140,15 @@ func Create(config config.StackConfig) (*Stack, error) {
 
   // Create codec
   codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
+  go codecComponent.ProcessEgressMessages()
+  go codecComponent.ProcessIngressMessages()
 
   // Create crypto component
   // XXX: defer validator and encryptor creation to the crypto component
-  cryptoContext := context.NewCryptoContext()
-  cryptoComponent := crypto.NewCryptoComponent(cryptoContext, codecComponent)
+  trustStore := context.NewTrustStore()
+  cryptoComponent := crypto.NewCryptoComponent(trustStore, codecComponent)
+  go cryptoComponent.ProcessEgressMessages()
+  go cryptoComponent.ProcessIngressMessages()
 
   // Create the right crypto processors
   if len(config.Keys) > 0 {
@@ -159,18 +170,15 @@ func Create(config config.StackConfig) (*Stack, error) {
 
   // Assemble the stack
   stack := &Stack{
-      components: []Component{cryptoComponent, codecComponent},
+      cryptoComponent: cryptoComponent,
+      codecComponent: codecComponent,
       head: cryptoComponent,
       pendingQueue: make(chan messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
       pendingMap: make(map[string]MessageCallback),
       prefixTable: lpm.LPM{},
   }
 
-  // Start each component
-  for _, component := range(stack.components) {
-      go component.ProcessEgressMessages()
-      go component.ProcessIngressMessages()
-  }
+  // Start the stack processing loop
   go stack.processInputQueue()
 
   return stack, nil

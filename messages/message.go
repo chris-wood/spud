@@ -31,7 +31,7 @@ type Message interface {
     // Messages have names, identifiers, and optionally, a payload
     Name() name.Name
     Payload() payload.Payload
-    PayloadType() uint8
+    PayloadType() uint16
 
     // Identifier() string
     // NamelessIdentifier() string
@@ -45,11 +45,8 @@ type Message interface {
     // GetMessageType() int
 }
 
-func InterestWrapper(m Message) MessageWrapper {
-    return MessageWrapper{msg: m}
-}
-
-func ContentWrapper(m Message) MessageWrapper {
+// We just need a single package function here
+func Package(m Message) MessageWrapper {
     return MessageWrapper{msg: m}
 }
 
@@ -159,6 +156,14 @@ func (m *MessageWrapper) Payload() payload.Payload {
     return m.msg.Payload()
 }
 
-func (m *MessageWrapper) PayloadType() uint8 {
+func (m *MessageWrapper) PayloadType() uint16 {
     return m.msg.PayloadType()
 }
+
+type MessageWrapperConstructor (func(m Message) MessageWrapper)
+// XXX: this function needs to know about which messages get wrapped in which packet types
+// func (m *MessageWrapper) GetWrapperConstructor() MessageWrapperConstructor {
+//     switch m.msg.GetPacketType()
+//     if interest, return interestwrapper
+//     if content, return contentwrapper
+// }

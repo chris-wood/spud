@@ -23,21 +23,22 @@ type CryptoComponent struct {
     pendingVerificationQueue map[string]messages.MessageWrapper
 
     // The context will be modified
-    cryptoContext *context.CryptoContext
+    // XXX: rename context to TrustStore
+    trustStore *context.TrustStore
     codecComponent codec.CodecComponent
 
     // XXX: LPM table of processors
     cryptoProcessor validator.CryptoProcessor
 }
 
-func NewCryptoComponent(cryptoContext *context.CryptoContext, codecComponent codec.CodecComponent) CryptoComponent {
+func NewCryptoComponent(trustStore *context.TrustStore, codecComponent codec.CodecComponent) CryptoComponent {
     egress := make(chan messages.MessageWrapper)
     ingress := make(chan messages.MessageWrapper)
 
     return CryptoComponent{
         ingress: ingress,
         egress: egress,
-        cryptoContext: cryptoContext,
+        trustStore: trustStore,
         codecComponent: codecComponent,
         pendingMap: make(map[string]messages.MessageWrapper),
         pendingVerificationQueue: make(map[string]messages.MessageWrapper),
@@ -50,7 +51,7 @@ func (c *CryptoComponent) AddCryptoProcessor(pattern string, proc validator.Cryp
 
     // XXX: build the named key (certificate) and add it to the cache
 
-    c.cryptoContext.AddTrustedKey(validationAlgorithm.KeyIdString(), validationAlgorithm.GetPublicKey())
+    c.trustStore.AddTrustedKey(validationAlgorithm.KeyIdString(), validationAlgorithm.GetPublicKey())
 }
 
 func addAuthenticator(msg *messages.MessageWrapper, proc validator.CryptoProcessor) (messages.MessageWrapper, error) {
@@ -108,7 +109,7 @@ func (c *CryptoComponent) processPendingResponses(msg messages.MessageWrapper) {
             payload := msg.Payload()
             rawKey := publickey.Create(payload.Value())
 
-            c.cryptoContext.AddTrustedKey(rawKey.KeyIdString(), rawKey)
+            c.trustStore.AddTrustedKey(rawKey.KeyIdString(), rawKey)
         }
     } else {
         c.ingress <- msg
@@ -126,7 +127,7 @@ func (c CryptoComponent) checkTrustProperties(msg messages.MessageWrapper) {
     validationAlgorithm := msg.GetValidationAlgorithm()
     keyId := validationAlgorithm.KeyIdString()
 
-    if c.cryptoContext.IsTrustedKey(keyId) {
+    if c.trustStore.IsTrustedKey(keyId) {
         c.processPendingResponses(msg)
     } else {
         log.Println("Not a trusted key. Drop the message.")
@@ -149,7 +150,7 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
 
             // Create an interest for the link and send it
             keyMsg := interest.CreateFromLink(link)
-            keyPacket := messages.InterestWrapper(keyMsg)
+            keyPacket := messages.Package(keyMsg)
 
             c.codecComponent.Enqueue(keyPacket)
             c.pendingMap[keyPacket.Identifier()] = keyPacket

@@ -42,16 +42,16 @@ func testStack() {
 }
 
 func ProducerSessionHandler(session *esic.ESIC) {
-    session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
-        return []byte("Hello CCNxKE!")
-    })
+    // session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
+    //     return []byte("Hello CCNxKE!")
+    // })
 }
 
 func ConsumerSessionHandler(session *esic.ESIC) {
-    session.Get("/foo/bar", func(data []byte) {
-        done <- 1
-        fmt.Println("Received:", string(data))
-    })
+    // session.Get("/foo/bar", func(data []byte) {
+    //     done <- 1
+    //     fmt.Println("Received:", string(data))
+    // })
 }
 
 func testSession() {

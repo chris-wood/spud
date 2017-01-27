@@ -45,7 +45,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     bareHello := kex.KEXHello()
     bareHelloRequest := interest.CreateWithName(bareHelloName)
     bareHelloRequest.AddContainer(bareHello)
-    api.kexStack.Enqueue(messages.InterestWrapper(bareHelloRequest))
+    api.kexStack.Enqueue(messages.Package(bareHelloRequest))
 
     // Wait for the response, and use it to build the full hello
     time.Sleep(100 * time.Millisecond)
@@ -66,7 +66,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 
     helloRequest := interest.CreateWithName(helloName)
     helloRequest.AddContainer(hello)
-    api.kexStack.Enqueue(messages.InterestWrapper(helloRequest))
+    api.kexStack.Enqueue(messages.Package(helloRequest))
 
     // Wait for the response to complete the KEX
     time.Sleep(100 * time.Millisecond)
@@ -88,8 +88,8 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
     box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
     // Create and start the session
-    session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
-    handler(session)
+    // session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
+    // handler(session)
 
     log.Println("Consumer: ", sharedKey)
 }
@@ -117,7 +117,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             reject := kex.KEXHelloReject(kexContainer, macKey)
             rejectResponse := content.CreateWithName(request.Name())
             rejectResponse.AddContainer(reject)
-            api.kexStack.Enqueue(messages.ContentWrapper(rejectResponse))
+            api.kexStack.Enqueue(messages.Package(rejectResponse))
             break
 
         case codec.T_KEX_HELLO:
@@ -130,7 +130,7 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 
             acceptResponse := content.CreateWithName(request.Name())
             acceptResponse.AddContainer(accept)
-            api.kexStack.Enqueue(messages.ContentWrapper(acceptResponse))
+            api.kexStack.Enqueue(messages.Package(acceptResponse))
 
             // XXX: go to the KDF step
 
@@ -144,8 +144,8 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
             log.Println("Producer:", sharedKey)
 
             // Create and start the session
-            session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())
-            callback(session)
+            // session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())
+            // callback(session)
 
             break
 

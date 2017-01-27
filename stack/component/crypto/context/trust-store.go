@@ -3,7 +3,7 @@ package context
 import "github.com/chris-wood/spud/stack/component/crypto/context/schema"
 import "fmt"
 
-type CryptoContext struct {
+type TrustStore struct {
     trustedKeys map[string]interface{}
     trustSchema *schema.Schema
 }
@@ -16,8 +16,8 @@ func (c contextError) Error() string {
     return fmt.Sprintf("%s", c.problem)
 }
 
-func NewCryptoContext() *CryptoContext {
-    return &CryptoContext{
+func NewTrustStore() *TrustStore {
+    return &TrustStore{
         trustedKeys: make(map[string]interface{}),
     }
 }
@@ -31,17 +31,17 @@ func contains(s []string, e string) bool {
     return false
 }
 
-func (c *CryptoContext) GetTrustedKey(key string) (interface{}, bool) {
+func (c *TrustStore) GetTrustedKey(key string) (interface{}, bool) {
     val, ok := c.trustedKeys[key]
     return val, ok
 }
 
-func (c *CryptoContext) IsTrustedKey(key string) bool {
+func (c *TrustStore) IsTrustedKey(key string) bool {
     _, ok := c.trustedKeys[key]
     return ok
 }
 
-func (c *CryptoContext) AddTrustedKey(key string, val interface{}) bool {
+func (c *TrustStore) AddTrustedKey(key string, val interface{}) bool {
     _, ok := c.trustedKeys[key]
     if !ok {
         c.trustedKeys[key] = val
