@@ -140,15 +140,11 @@ func Create(config config.StackConfig) (*Stack, error) {
 
   // Create codec
   codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
-  go codecComponent.ProcessEgressMessages()
-  go codecComponent.ProcessIngressMessages()
 
   // Create crypto component
   // XXX: defer validator and encryptor creation to the crypto component
   trustStore := context.NewTrustStore()
   cryptoComponent := crypto.NewCryptoComponent(trustStore, codecComponent)
-  go cryptoComponent.ProcessEgressMessages()
-  go cryptoComponent.ProcessIngressMessages()
 
   // Create the right crypto processors
   if len(config.Keys) > 0 {
@@ -179,6 +175,10 @@ func Create(config config.StackConfig) (*Stack, error) {
   }
 
   // Start the stack processing loop
+  go codecComponent.ProcessEgressMessages()
+  go codecComponent.ProcessIngressMessages()
+  go cryptoComponent.ProcessEgressMessages()
+  go cryptoComponent.ProcessIngressMessages()
   go stack.processInputQueue()
 
   return stack, nil
