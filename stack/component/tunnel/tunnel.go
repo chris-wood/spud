@@ -2,28 +2,38 @@ package tunnel
 
 import "log"
 
-import "github.com/chris-wood/spud/codec"
+import messageCodec "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
+import "github.com/chris-wood/spud/stack/component"
+import "github.com/chris-wood/spud/stack/component/codec"
+
+type Tunnel struct {
+	ingress chan messages.MessageWrapper
+	egress  chan messages.MessageWrapper
+    downstream component.Component
+    session *Session
+}
 
 type TunnelComponent struct {
 	ingress chan messages.MessageWrapper
 	egress  chan messages.MessageWrapper
-	session *Session
+    exitCodec *codec.CodecComponent
+	tunnels []*Tunnel
 }
 
-func NewTunnelComponent(session *Session) TunnelComponent {
+func NewTunnel(session *Session, downstream component.Component) *Tunnel {
 	egress := make(chan messages.MessageWrapper)
 	ingress := make(chan messages.MessageWrapper)
 
 	log.Println("Created Transport component")
 
-	return TunnelComponent{ingress: ingress, egress: egress, session: session}
+	return &Tunnel{ingress: ingress, egress: egress, downstream: downstream, session: session}
 }
 
-func (c TunnelComponent) ProcessEgressMessages() {
+func (c Tunnel) ProcessEgressMessages() {
 	for {
 		msg := <-c.egress
 
@@ -36,10 +46,10 @@ func (c TunnelComponent) ProcessEgressMessages() {
 			encapPayload := payload.Create(encryptedMessage)
 
 			var encapResponse messages.MessageWrapper
-			if msg.GetPacketType() == codec.T_INTEREST {
-				encapResponse = messages.Package(interest.CreateWithNameAndPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload))
+			if msg.GetPacketType() == messageCodec.T_INTEREST {
+				encapResponse = messages.Package(interest.CreateWithNameAndPayload(sessionName, messageCodec.T_PAYLOADTYPE_ENCAP, encapPayload))
 			} else {
-				encapResponse = messages.Package(content.CreateWithNameAndTypedPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload))
+				encapResponse = messages.Package(content.CreateWithNameAndTypedPayload(sessionName, messageCodec.T_PAYLOADTYPE_ENCAP, encapPayload))
 			}
 
 			c.egress <- encapResponse
@@ -48,14 +58,14 @@ func (c TunnelComponent) ProcessEgressMessages() {
 	}
 }
 
-func (c TunnelComponent) ProcessIngressMessages() {
+func (c Tunnel) ProcessIngressMessages() {
 	for {
 		// msg := c.codecComponent.Dequeue()
 		var msg messages.MessageWrapper
 		encryptedPayload := msg.InnerMessage().Payload().Value()
 		encapInterest, err := c.session.Decrypt(encryptedPayload)
 		if err == nil {
-			d := codec.Decoder{}
+			d := messageCodec.Decoder{}
 			decodedTlV := d.Decode(encapInterest)
 			if len(decodedTlV) == 1 {
 				responseMsg, err := messages.CreateFromTLV(decodedTlV)
@@ -67,11 +77,56 @@ func (c TunnelComponent) ProcessIngressMessages() {
 	}
 }
 
+func (c Tunnel) Enqueue(msg messages.MessageWrapper) {
+    c.egress <- msg
+}
+
+func (c Tunnel) Dequeue() messages.MessageWrapper {
+    msg := <-c.ingress
+    return msg
+}
+
+func NewTunnelComponent(codecComponent *codec.CodecComponent) TunnelComponent {
+	egress := make(chan messages.MessageWrapper)
+	ingress := make(chan messages.MessageWrapper)
+
+	log.Println("Created Transport component")
+
+	return TunnelComponent{ingress: ingress, egress: egress, tunnels: make([]*Tunnel, 0)}
+}
+
+func (c TunnelComponent) ProcessEgressMessages() {
+	for {
+		msg := <-c.egress
+        if len(c.tunnels) == 0 {
+            c.exitCodec.Enqueue(msg)
+        } else {
+            c.tunnels[0].Enqueue(msg)
+        }
+	}
+}
+
+func (c TunnelComponent) ProcessIngressMessages() {
+	for {
+        if len(c.tunnels) == 0 {
+            msg := c.exitCodec.Dequeue()
+            c.ingress <- msg
+        } else {
+            msg := c.tunnels[0].Dequeue()
+            c.ingress <- msg
+        }
+	}
+}
+
 func (c TunnelComponent) Enqueue(msg messages.MessageWrapper) {
-	c.egress <- msg
+    if len(c.tunnels) == 0 {
+        c.egress <- msg
+    } else {
+        c.tunnels[0].Enqueue(msg)
+    }
 }
 
 func (c TunnelComponent) Dequeue() messages.MessageWrapper {
-	msg := <-c.ingress
-	return msg
+    msg := <-c.ingress
+    return msg
 }

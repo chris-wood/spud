@@ -14,6 +14,7 @@ import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/stack/config"
 import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/pit"
+import "github.com/chris-wood/spud/stack/component"
 import "github.com/chris-wood/spud/stack/component/tunnel"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
@@ -23,19 +24,11 @@ import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type MessageCallback func(msg messages.MessageWrapper)
 
-type Component interface {
-	// XXX: rename to Push and Pop, respectively
-	Enqueue(messages.MessageWrapper)
-	Dequeue() messages.MessageWrapper
-	ProcessEgressMessages()
-	ProcessIngressMessages()
-}
-
 type Stack struct {
-	cryptoComponent Component
-	codecComponent  Component
-	head            Component
-	bottom          Component
+	cryptoComponent component.Component
+	codecComponent  component.Component
+	head            component.Component
+	bottom          component.Component
 
 	pendingMap   map[string]MessageCallback
 	pendingQueue chan messages.MessageWrapper
