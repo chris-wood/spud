@@ -8,7 +8,7 @@ import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/validation"
 import "github.com/chris-wood/spud/messages/validation/publickey"
-import "github.com/chris-wood/spud/stack/component/codec"
+import "github.com/chris-wood/spud/stack/component"
 import "github.com/chris-wood/spud/stack/component/crypto/validator"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
 
@@ -25,13 +25,13 @@ type CryptoComponent struct {
 	// The context will be modified
 	// XXX: rename context to TrustStore
 	trustStore     *context.TrustStore
-	codecComponent codec.CodecComponent
+	codecComponent component.Component
 
 	// XXX: LPM table of processors
 	cryptoProcessor validator.CryptoProcessor
 }
 
-func NewCryptoComponent(trustStore *context.TrustStore, codecComponent codec.CodecComponent) CryptoComponent {
+func NewCryptoComponent(trustStore *context.TrustStore, codecComponent component.Component) CryptoComponent {
 	egress := make(chan messages.MessageWrapper)
 	ingress := make(chan messages.MessageWrapper)
 
@@ -71,6 +71,7 @@ func addAuthenticator(msg *messages.MessageWrapper, proc validator.CryptoProcess
 func (c CryptoComponent) ProcessEgressMessages() {
 	for {
 		msg := <-c.egress
+        log.Println("Processing an egress message")
 
 		// Look up the processor based on the message
 		// XXX: apply the LPM filter for the right processor here
@@ -173,6 +174,7 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
 func (c CryptoComponent) ProcessIngressMessages() {
 	for {
 		msg := c.codecComponent.Dequeue()
+        log.Println("Processing an ingress message")
 
 		// Hand off the message to the request/response handler
 		if msg.GetPacketType() != tlvCodec.T_INTEREST {

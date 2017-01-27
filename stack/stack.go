@@ -27,6 +27,7 @@ type MessageCallback func(msg messages.MessageWrapper)
 type Stack struct {
 	cryptoComponent component.Component
 	codecComponent  component.Component
+    tunnelComponent *tunnel.TunnelComponent
 	head            component.Component
 	bottom          component.Component
 
@@ -100,8 +101,8 @@ func (s *Stack) processInputQueue() {
 	}
 }
 
-func (s *Stack) AddTunnel(tun tunnel.TunnelComponent) {
-
+func (s *Stack) AddSession(session *tunnel.Session, baseName name.Name) {
+    s.tunnelComponent.AddSession(session, baseName)
 }
 
 func Create(config config.StackConfig) (*Stack, error) {
@@ -135,10 +136,13 @@ func Create(config config.StackConfig) (*Stack, error) {
 	// Create codec
 	codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
+    // Create the tunnel component
+    tunnelComponent := tunnel.NewTunnelComponent(codecComponent)
+
 	// Create crypto component
 	// XXX: delegate validator and encryptor creation to the crypto component
 	trustStore := context.NewTrustStore()
-	cryptoComponent := crypto.NewCryptoComponent(trustStore, codecComponent)
+	cryptoComponent := crypto.NewCryptoComponent(trustStore, tunnelComponent)
 
 	// Create the right crypto processors
 	if len(config.Keys) > 0 {
@@ -162,15 +166,18 @@ func Create(config config.StackConfig) (*Stack, error) {
 	stack := &Stack{
 		cryptoComponent: cryptoComponent,
 		codecComponent:  codecComponent,
+        tunnelComponent: tunnelComponent,
 		head:            cryptoComponent,
 		pendingQueue:    make(chan messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
 		pendingMap:      make(map[string]MessageCallback),
 		prefixTable:     lpm.LPM{},
 	}
 
-	// Start the stack processing loop
+	// Start the stack processing loop -- the order here matters
 	go codecComponent.ProcessEgressMessages()
 	go codecComponent.ProcessIngressMessages()
+    go tunnelComponent.ProcessEgressMessages()
+	go tunnelComponent.ProcessIngressMessages()
 	go cryptoComponent.ProcessEgressMessages()
 	go cryptoComponent.ProcessIngressMessages()
 	go stack.processInputQueue()
