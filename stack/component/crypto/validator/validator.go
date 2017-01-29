@@ -15,9 +15,9 @@ import "log"
 import "fmt"
 
 type CryptoProcessor interface {
-	CanVerify(msg messages.MessageWrapper) bool
-	Sign(msg messages.MessageWrapper) ([]byte, error)
-	Verify(request, response messages.MessageWrapper) bool
+	CanVerify(msg *messages.MessageWrapper) bool
+	Sign(msg *messages.MessageWrapper) ([]byte, error)
+	Verify(request, response *messages.MessageWrapper) bool
 
 	ProcessorDetails() validation.ValidationAlgorithm
 	Hasher() hash.Hash
@@ -58,13 +58,13 @@ func NewRSAProcessorWithKey(key *rsa.PrivateKey) (RSAProcessor, error) {
 	return RSAProcessor{privateKey: key, publicKey: publicKey}, nil
 }
 
-func (p RSAProcessor) Sign(msg messages.MessageWrapper) ([]byte, error) {
+func (p RSAProcessor) Sign(msg *messages.MessageWrapper) ([]byte, error) {
 	digest := msg.HashProtectedRegion(sha256.New())
 	signature, err := rsa.SignPKCS1v15(rand.Reader, p.privateKey, crypto.SHA256, digest)
 	return signature, err
 }
 
-func (p RSAProcessor) Verify(request, response messages.MessageWrapper) bool {
+func (p RSAProcessor) Verify(request, response *messages.MessageWrapper) bool {
 	validationPayload := response.GetValidationPayload()
 	validationAlgorithm := response.GetValidationAlgorithm()
 
@@ -87,8 +87,8 @@ func (p RSAProcessor) Verify(request, response messages.MessageWrapper) bool {
 
 	signature := validationPayload.Value()
 	digest := response.HashProtectedRegion(sha256.New())
-
 	err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest, signature)
+
 	return err == nil
 }
 
@@ -108,7 +108,7 @@ func (p RSAProcessor) Hasher() hash.Hash {
 	return sha256.New()
 }
 
-func (p RSAProcessor) CanVerify(msg messages.MessageWrapper) bool {
+func (p RSAProcessor) CanVerify(msg *messages.MessageWrapper) bool {
 	validationAlgorithm := msg.GetValidationAlgorithm()
 
 	switch validationAlgorithm.GetValidationSuite() {

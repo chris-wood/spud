@@ -1,6 +1,8 @@
 package kex
 
 import "fmt"
+import "log"
+
 import "bytes"
 import "time"
 import "github.com/chris-wood/spud/util"
@@ -233,6 +235,10 @@ func CreateFromTLV(kexTLV codec.TLV) (*KEX, error) {
         case codec.T_KEX_TIMESTAMP:
             emap[_kTimestamp] = extension
             break
+        case codec.T_KEX_KEYSHARE:
+            emap[_kPublicKeyShare] = extension
+        default:
+            log.Fatal("Invalid KEX extension type", extension.ExtType)
         }
     }
 

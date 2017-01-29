@@ -1,18 +1,19 @@
 package main
 
-import "github.com/chris-wood/spud/stack"
+import "fmt"
+
+import "github.com/chris-wood/spud/stack/spud"
 import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
 
 func generateResponse(prefix string, payload []byte) []byte {
+    fmt.Println("GENERATING A RESPONSE")
     return []byte("Hello, world!")
 }
 
 func serve(prefix string) {
-    myStack, _ := stack.CreateRaw(`{"connector": "athena", "link": "tcp", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
-    // myStack := stack.Create(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
-    // myStack := stack.CreateTest()
-    ccnPortal := portal.NewPortal(myStack)
+    myStack, _ := spud.CreateRaw(`{"connector": "athena", "link": "tcp", "fwdaddress": "127.0.0.1:9696", "keys": ["key.p12"]}`)
+    ccnPortal := portal.NewSecurePortal(myStack)
     api := adapter.NewKVSAPI(ccnPortal)
 
     done := make(chan int)

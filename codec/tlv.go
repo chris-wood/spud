@@ -1,5 +1,7 @@
 package codec
 
+// import "fmt"
+
 import "encoding/json"
 
 type TLV interface {
@@ -46,6 +48,16 @@ func (tlv NestedTLV) String() string {
     return err.Error()
 }
 
+// func (tlv NestedTLV) DisplayTLV(indents int) {
+//     for i := 0; i < indents; i++ {
+//         fmt.Printf("  ")
+//     }
+//     fmt.Printf("%d %d\n", tlv.Type(), tlv.Length())
+//     for _, c := range(tlv.children) {
+//         c.DisplayTLV(indents + 1)
+//     }
+// }
+
 func NewNestedTLV(tlvType uint16, children []TLV) NestedTLV {
     return NestedTLV{tlvType: tlvType, children: children}
 }
@@ -82,3 +94,10 @@ func (tlv LeafTLV) String() string {
     }
     return err.Error()
 }
+
+// func (tlv LeafTLV) DisplayTLV(indents int) {
+//     for i := 0; i < indents; i++ {
+//         fmt.Printf("  ")
+//     }
+//     fmt.Printf("%d %d: %s\n", tlv.Type(), tlv.Length(), string(tlv.Payload))
+// }

@@ -15,8 +15,8 @@ const DEFAULT_HOP_LIMIT uint8 = 0xFF
 const CODEC_SCHEMA_VERSION uint8 = 0x01
 
 type CodecComponent struct {
-	ingress chan messages.MessageWrapper
-	egress  chan messages.MessageWrapper
+	ingress chan *messages.MessageWrapper
+	egress  chan *messages.MessageWrapper
 
 	stackCache *cache.Cache
 	stackPit   *pit.PIT
@@ -24,8 +24,8 @@ type CodecComponent struct {
 }
 
 func NewCodecComponent(conn connector.ForwarderConnector, stackCache *cache.Cache, stackPit *pit.PIT) CodecComponent {
-	egress := make(chan messages.MessageWrapper)
-	ingress := make(chan messages.MessageWrapper)
+	egress := make(chan *messages.MessageWrapper)
+	ingress := make(chan *messages.MessageWrapper)
 
 	return CodecComponent{ingress: ingress, egress: egress, connector: conn, stackCache: stackCache, stackPit: stackPit}
 }
@@ -78,17 +78,12 @@ func (c CodecComponent) ProcessEgressMessages() {
 		// Otherwise, if it's an interest, insert into the PIT (if not yet there) and forward
 		if messageType == codec.T_OBJECT {
 			c.stackCache.Insert(msg.Identifier(), wireFormat)
-
-			log.Println("Sending encoded content response", wireFormat)
-
 			c.connector.Write(wireFormat)
 		} else if messageType == codec.T_INTEREST {
 			_, found := c.stackPit.Lookup(msg.Identifier())
 			if !found {
 				// XXX: this check should be performed above to avoid unnecessary encoding
 				c.stackPit.Insert(msg.Identifier(), msg)
-
-				log.Println("Sending encoded interest request", wireFormat)
 				c.connector.Write(wireFormat)
 			} else {
 				// don't insert, just aggregate...
@@ -102,8 +97,6 @@ func (c CodecComponent) ProcessIngressMessages() {
 	for {
 		msgBytes := c.connector.Read()
 		if len(msgBytes) > 8 {
-			log.Println("Processing ingress message", msgBytes)
-
 			// 1. Extract the message bytes (strip headers)
 			// packetLength := readWord(msgBytes[2:4])
 			headerLength := msgBytes[7]
@@ -131,11 +124,11 @@ func (c CodecComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c CodecComponent) Enqueue(msg messages.MessageWrapper) {
+func (c CodecComponent) Enqueue(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c CodecComponent) Dequeue() messages.MessageWrapper {
+func (c CodecComponent) Dequeue() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }

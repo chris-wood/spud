@@ -13,14 +13,14 @@ import "github.com/chris-wood/spud/stack/component/crypto/validator"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type CryptoComponent struct {
-	ingress chan messages.MessageWrapper
-	egress  chan messages.MessageWrapper
+	ingress chan *messages.MessageWrapper
+	egress  chan *messages.MessageWrapper
 
 	// Pending egress messages
-	pendingMap map[string]messages.MessageWrapper
+	pendingMap map[string]*messages.MessageWrapper
 
 	// XXX: queue of packets pending verification
-	pendingVerificationQueue map[string]messages.MessageWrapper
+	pendingVerificationQueue map[string]*messages.MessageWrapper
 
 	// The context will be modified
 	// XXX: rename context to TrustStore
@@ -32,16 +32,16 @@ type CryptoComponent struct {
 }
 
 func NewCryptoComponent(trustStore *context.TrustStore, codecComponent component.Component) CryptoComponent {
-	egress := make(chan messages.MessageWrapper)
-	ingress := make(chan messages.MessageWrapper)
+	egress := make(chan *messages.MessageWrapper)
+	ingress := make(chan *messages.MessageWrapper)
 
 	return CryptoComponent{
 		ingress:                  ingress,
 		egress:                   egress,
 		trustStore:               trustStore,
 		codecComponent:           codecComponent,
-		pendingMap:               make(map[string]messages.MessageWrapper),
-		pendingVerificationQueue: make(map[string]messages.MessageWrapper),
+		pendingMap:               make(map[string]*messages.MessageWrapper),
+		pendingVerificationQueue: make(map[string]*messages.MessageWrapper),
 	}
 }
 
@@ -54,10 +54,10 @@ func (c *CryptoComponent) AddCryptoProcessor(pattern string, proc validator.Cryp
 	c.trustStore.AddTrustedKey(validationAlgorithm.KeyIdString(), validationAlgorithm.GetPublicKey())
 }
 
-func addAuthenticator(msg *messages.MessageWrapper, proc validator.CryptoProcessor) (messages.MessageWrapper, error) {
+func addAuthenticator(msg *messages.MessageWrapper, proc validator.CryptoProcessor) (*messages.MessageWrapper, error) {
 	va := proc.ProcessorDetails()
 	msg.SetValidationAlgorithm(va)
-	signature, err := proc.Sign(*msg)
+	signature, err := proc.Sign(msg)
 	if err == nil {
 		vp := validation.NewValidationPayload(signature)
 		msg.SetValidationPayload(vp)
@@ -65,13 +65,12 @@ func addAuthenticator(msg *messages.MessageWrapper, proc validator.CryptoProcess
 		log.Println("Signing error:", err)
 	}
 
-	return *msg, err
+	return msg, err
 }
 
 func (c CryptoComponent) ProcessEgressMessages() {
 	for {
 		msg := <-c.egress
-        log.Println("Processing an egress message")
 
 		// Look up the processor based on the message
 		// XXX: apply the LPM filter for the right processor here
@@ -79,7 +78,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
 		// if !msg.IsRequest() {
 
 		var err error
-		msg, err = addAuthenticator(&msg, c.cryptoProcessor)
+		msg, err = addAuthenticator(msg, c.cryptoProcessor)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -93,14 +92,14 @@ func (c CryptoComponent) ProcessEgressMessages() {
 	}
 }
 
-func (c CryptoComponent) handleIngressRequest(msg messages.MessageWrapper) {
+func (c CryptoComponent) handleIngressRequest(msg *messages.MessageWrapper) {
 	// XXX: what else needs to be done here?
 	c.ingress <- msg
 }
 
 // Check to see if there are any other messages to verify with this
 // newly verified key. If there is, recursively call the verify request
-func (c *CryptoComponent) processPendingResponses(msg messages.MessageWrapper) {
+func (c *CryptoComponent) processPendingResponses(msg *messages.MessageWrapper) {
 	dependentRequest, ok := c.pendingVerificationQueue[msg.Identifier()]
 	if ok {
 		c.handleIngressResponse(dependentRequest)
@@ -118,13 +117,13 @@ func (c *CryptoComponent) processPendingResponses(msg messages.MessageWrapper) {
 	}
 }
 
-func (c CryptoComponent) dropPendingResponses(msg messages.MessageWrapper) {
+func (c CryptoComponent) dropPendingResponses(msg *messages.MessageWrapper) {
 	delete(c.pendingVerificationQueue, msg.Identifier())
 	delete(c.pendingMap, msg.Identifier())
 }
 
 // XXX: rename this
-func (c CryptoComponent) checkTrustProperties(msg messages.MessageWrapper) {
+func (c CryptoComponent) checkTrustProperties(msg *messages.MessageWrapper) {
 	validationAlgorithm := msg.GetValidationAlgorithm()
 	keyId := validationAlgorithm.KeyIdString()
 
@@ -136,7 +135,7 @@ func (c CryptoComponent) checkTrustProperties(msg messages.MessageWrapper) {
 	}
 }
 
-func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
+func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 	// Check to see if this is a response to a previous key name
 	request, isPending := c.pendingMap[msg.Identifier()]
 	if isPending {
@@ -160,8 +159,10 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
 			c.pendingVerificationQueue[keyPacket.Identifier()] = msg
 		} else {
 			if c.cryptoProcessor.Verify(request, msg) {
+                log.Println("Verifying the response")
 				c.checkTrustProperties(msg)
 			} else {
+                log.Println("Dropping the response")
 				c.dropPendingResponses(msg)
 			}
 		}
@@ -174,7 +175,6 @@ func (c CryptoComponent) handleIngressResponse(msg messages.MessageWrapper) {
 func (c CryptoComponent) ProcessIngressMessages() {
 	for {
 		msg := c.codecComponent.Dequeue()
-        log.Println("Processing an ingress message")
 
 		// Hand off the message to the request/response handler
 		if msg.GetPacketType() != tlvCodec.T_INTEREST {
@@ -185,11 +185,11 @@ func (c CryptoComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c CryptoComponent) Enqueue(msg messages.MessageWrapper) {
+func (c CryptoComponent) Enqueue(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c CryptoComponent) Dequeue() messages.MessageWrapper {
+func (c CryptoComponent) Dequeue() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }

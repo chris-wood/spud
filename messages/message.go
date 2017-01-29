@@ -46,8 +46,8 @@ type Message interface {
 }
 
 // We just need a single package function here
-func Package(m Message) MessageWrapper {
-    return MessageWrapper{msg: m}
+func Package(m Message) *MessageWrapper {
+    return &MessageWrapper{msg: m}
 }
 
 func (m *MessageWrapper) InnerMessage() Message {
@@ -63,40 +63,42 @@ func (m *MessageWrapper) Encode() []byte {
     return bytes
 }
 
-func CreateFromTLV(tlv []codec.TLV) (MessageWrapper, error) {
-    var result MessageWrapper
+func CreateFromTLV(tlv []codec.TLV) (*MessageWrapper, error) {
     var inner Message
+    var validationAlgorithm validation.ValidationAlgorithm
+    var validationPayload validation.ValidationPayload
     var err error
 
     for _, root := range tlv {
         switch (root.Type()) {
         case codec.T_INTEREST:
             inner, err = interest.CreateFromTLV(root)
-            result.msg = inner
             break
         case codec.T_OBJECT:
             inner, err = content.CreateFromTLV(root)
-            result.msg = inner
             break
         case codec.T_VALALG:
-            validationAlgorithm, createError := validation.CreateFromTLV(root)
-            if createError != nil {
-                return result, createError
+            validationAlgorithm, err = validation.CreateFromTLV(root)
+            if err != nil {
+                return nil, err
             }
-            result.SetValidationAlgorithm(validationAlgorithm)
             break
         case codec.T_VALPAYLOAD:
-            validationPayload := validation.NewValidationPayload(root.Value())
-            result.SetValidationPayload(validationPayload)
+            validationPayload = validation.NewValidationPayload(root.Value())
             break
         default:
-            fmt.Println("invalid type " + string(root.Type()))
-            fmt.Println(root.Type())
-            return result, messageError{"Unable to create a message from the top-level TLV type " + string(root.Type())}
+            fmt.Println("Invalid type:", string(root.Type()))
+            return nil, messageError{"Unable to create a message from the top-level TLV type " + string(root.Type())}
         }
     }
 
-    return result, err
+    wrapper := MessageWrapper {
+        msg: inner,
+        validationPayload: validationPayload,
+        validationAlgorithm: validationAlgorithm,
+    }
+
+    return &wrapper, nil
 }
 
 // Messages can compute the hashes of their protected regions and their complete packet formats.
@@ -159,11 +161,3 @@ func (m *MessageWrapper) Payload() payload.Payload {
 func (m *MessageWrapper) PayloadType() uint16 {
     return m.msg.PayloadType()
 }
-
-type MessageWrapperConstructor (func(m Message) MessageWrapper)
-// XXX: this function needs to know about which messages get wrapped in which packet types
-// func (m *MessageWrapper) GetWrapperConstructor() MessageWrapperConstructor {
-//     switch m.msg.GetPacketType()
-//     if interest, return interestwrapper
-//     if content, return contentwrapper
-// }

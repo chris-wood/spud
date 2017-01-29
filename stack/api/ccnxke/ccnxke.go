@@ -7,6 +7,7 @@ import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/stack"
 import "github.com/chris-wood/spud/util"
 import "github.com/chris-wood/spud/stack/api/esic"
+import "github.com/chris-wood/spud/stack/component/tunnel"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/name"
@@ -18,7 +19,7 @@ import "github.com/chris-wood/spud/messages/content"
 import "golang.org/x/crypto/nacl/box"
 
 type CCNxKEAPI struct {
-	kexStack    *stack.Stack
+	kexStack    stack.Stack
 	prefixTable lpm.LPM
 }
 
@@ -27,7 +28,7 @@ type ResponseCallback func([]byte)
 
 const connectString string = "CONNECT"
 
-func NewCCNxKEAPI(s *stack.Stack) *CCNxKEAPI {
+func NewCCNxKEAPI(s stack.Stack) *CCNxKEAPI {
 	prefixLPM := lpm.LPM{}
 	api := &CCNxKEAPI{
 		kexStack:    s,
@@ -36,7 +37,7 @@ func NewCCNxKEAPI(s *stack.Stack) *CCNxKEAPI {
 	return api
 }
 
-func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
+func (api *CCNxKEAPI) Connect(prefix name.Name) {
 	randomPrefix, _ := util.GenerateRandomString(16)
 	bareHelloName, _ := prefix.AppendComponent(connectString)
 	bareHelloName, _ = bareHelloName.AppendComponent(randomPrefix)
@@ -48,7 +49,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 	api.kexStack.Enqueue(messages.Package(bareHelloRequest))
 
 	// Wait for the response, and use it to build the full hello
-	time.Sleep(100 * time.Millisecond)
+	// time.Sleep(100 * time.Millisecond)
 	replyWrapper := api.kexStack.Dequeue()
 	reply := replyWrapper.InnerMessage()
 	log.Println("Got the REJECT")
@@ -69,7 +70,7 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 	api.kexStack.Enqueue(messages.Package(helloRequest))
 
 	// Wait for the response to complete the KEX
-	time.Sleep(100 * time.Millisecond)
+	// time.Sleep(100 * time.Millisecond)
 	replyWrapper = api.kexStack.Dequeue()
 	reply = replyWrapper.InnerMessage()
 
@@ -91,16 +92,19 @@ func (api *CCNxKEAPI) Connect(prefix name.Name, handler SessionCallback) {
 	// session := esic.NewESIC(api.kexStack, sharedKey[:], acceptKEX.GetSessionID())
 	// handler(session)
 
+    session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
+    api.kexStack.AddSession(session, prefix)
+
 	log.Println("Consumer: ", sharedKey)
 }
 
-func (api *CCNxKEAPI) Service(prefix name.Name, callback SessionCallback) {
+func (api *CCNxKEAPI) Service(prefix name.Name) {
 	macKey, _ := util.GenerateRandomBytes(16)
 	encKey, _ := util.GenerateRandomBytes(16)
-	go api.serviceSessions(prefix, callback, macKey, encKey)
+	go api.serviceSessions(prefix, macKey, encKey)
 }
 
-func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback, macKey, encKey []byte) {
+func (api *CCNxKEAPI) serviceSessions(prefix name.Name, macKey, encKey []byte) {
 	for {
 		requestWrapper := api.kexStack.Dequeue()
 		request := requestWrapper.InnerMessage()
@@ -146,6 +150,8 @@ func (api *CCNxKEAPI) serviceSessions(prefix name.Name, callback SessionCallback
 			// Create and start the session
 			// session := esic.NewESIC(api.kexStack, sharedKey[:], accept.GetSessionID())
 			// callback(session)
+            session := tunnel.NewSession(sharedKey[:], accept.GetSessionID())
+            api.kexStack.AddSession(session, prefix)
 
 			break
 

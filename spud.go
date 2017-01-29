@@ -3,7 +3,7 @@ package main
 import "fmt"
 import "time"
 
-import "github.com/chris-wood/spud/stack"
+import "github.com/chris-wood/spud/stack/spud"
 import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
 import "github.com/chris-wood/spud/stack/api/ccnxke"
@@ -24,7 +24,7 @@ func generateResponse(name string, response []byte) []byte {
 }
 
 func testStack() {
-    myStack, err := stack.CreateRaw(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
+    myStack, err := spud.CreateRaw(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
     if err != nil {
         panic("Could not create the stack")
     }
@@ -55,7 +55,7 @@ func ConsumerSessionHandler(session *esic.ESIC) {
 }
 
 func testSession() {
-    myStack, err := stack.CreateRaw(`{"link": "loopback"}`)
+    myStack, err := spud.CreateRaw(`{"link": "loopback"}`)
     if err != nil {
         panic("Could not create the stack")
     }
@@ -63,8 +63,8 @@ func testSession() {
     done = make(chan int)
 
     prefix, _ := name.Parse("ccnx:/producer")
-    api.Service(prefix, ProducerSessionHandler) // ditto below
-    api.Connect(prefix, ConsumerSessionHandler) // SessionHandler will be invoked if and when the session is successfully completed
+    api.Service(prefix) // ditto below
+    api.Connect(prefix) // SessionHandler will be invoked if and when the session is successfully completed
 
     // sleep until the consumer gets a response
     <- done

@@ -1,7 +1,6 @@
 package content
 
 import "fmt"
-// import "hash"
 
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/kex"
