@@ -184,3 +184,7 @@ func (n SecurePortal) Serve(prefix name.Name, callback RequestMessageCallback) {
         }
 	}
 }
+
+func (p SecurePortal) Produce(data *messages.MessageWrapper) {
+    p.apiStack.Enqueue(data)
+}

@@ -44,3 +44,7 @@ func (n PlainPortal) Serve(prefix name.Name, callback RequestMessageCallback) {
 		n.apiStack.Enqueue(response)
 	})
 }
+
+func (p PlainPortal) Produce(data *messages.MessageWrapper) {
+    p.apiStack.Enqueue(data)
+}

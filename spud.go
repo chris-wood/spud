@@ -6,10 +6,6 @@ import "time"
 import "github.com/chris-wood/spud/stack/spud"
 import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
-import "github.com/chris-wood/spud/stack/api/ccnxke"
-import "github.com/chris-wood/spud/stack/api/esic"
-
-import "github.com/chris-wood/spud/messages/name"
 
 var count = 0
 var done chan int
@@ -29,8 +25,8 @@ func testStack() {
         panic("Could not create the stack")
     }
 
-    ccnPortal := portal.NewPortal(myStack)
-    api := adapter.NewKVSAPI(ccnPortal)
+    p := portal.NewPortal(myStack)
+    api := adapter.NewKVSAPI(p)
 
     api.Serve("ccnx:/hello/spud", generateResponse)
     data, err := api.Get("ccnx:/hello/spud", time.Second)
@@ -41,34 +37,20 @@ func testStack() {
     }
 }
 
-func ProducerSessionHandler(session *esic.ESIC) {
-    // session.Serve("/foo/bar", func(nameString string, data []byte) []byte {
-    //     return []byte("Hello CCNxKE!")
-    // })
-}
-
-func ConsumerSessionHandler(session *esic.ESIC) {
-    // session.Get("/foo/bar", func(data []byte) {
-    //     done <- 1
-    //     fmt.Println("Received:", string(data))
-    // })
-}
-
-func testSession() {
-    myStack, err := spud.CreateRaw(`{"link": "loopback"}`)
-    if err != nil {
-        panic("Could not create the stack")
-    }
-    api := ccnxke.NewCCNxKEAPI(myStack)
-    done = make(chan int)
-
-    prefix, _ := name.Parse("ccnx:/producer")
-    api.Service(prefix) // ditto below
-    api.Connect(prefix) // SessionHandler will be invoked if and when the session is successfully completed
-
-    // sleep until the consumer gets a response
-    <- done
-}
+// func testSession() {
+//     myStack, err := spud.CreateRaw(`{"link": "loopback"}`)
+//     if err != nil {
+//         panic("Could not create the stack")
+//     }
+//     done = make(chan int)
+//
+//     prefix, _ := name.Parse("ccnx:/producer")
+//     api.Service(prefix) // ditto below
+//     api.Connect(prefix) // SessionHandler will be invoked if and when the session is successfully completed
+//
+//     // sleep until the consumer gets a response
+//     <- done
+// }
 
 func main() {
     testStack()

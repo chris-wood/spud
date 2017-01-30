@@ -13,6 +13,7 @@ type Portal interface {
 	Get(request *messages.MessageWrapper, timeout time.Duration) (*messages.MessageWrapper, error)
     GetAsync(request *messages.MessageWrapper, callback ResponseMessageCallback)
     Serve(prefix name.Name, callback RequestMessageCallback)
+    Produce(data *messages.MessageWrapper)
 }
 
 type PortalError struct {

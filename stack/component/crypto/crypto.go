@@ -3,7 +3,7 @@ package crypto
 import "fmt"
 import "log"
 
-import tlvCodec "github.com/chris-wood/spud/codec"
+import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/validation"
@@ -23,15 +23,14 @@ type CryptoComponent struct {
 	pendingVerificationQueue map[string]*messages.MessageWrapper
 
 	// The context will be modified
-	// XXX: rename context to TrustStore
 	trustStore     *context.TrustStore
-	codecComponent component.Component
+	downstream component.Component
 
 	// XXX: LPM table of processors
 	cryptoProcessor validator.CryptoProcessor
 }
 
-func NewCryptoComponent(trustStore *context.TrustStore, codecComponent component.Component) CryptoComponent {
+func NewCryptoComponent(trustStore *context.TrustStore, downstream component.Component) CryptoComponent {
 	egress := make(chan *messages.MessageWrapper)
 	ingress := make(chan *messages.MessageWrapper)
 
@@ -39,7 +38,7 @@ func NewCryptoComponent(trustStore *context.TrustStore, codecComponent component
 		ingress:                  ingress,
 		egress:                   egress,
 		trustStore:               trustStore,
-		codecComponent:           codecComponent,
+		downstream:               downstream,
 		pendingMap:               make(map[string]*messages.MessageWrapper),
 		pendingVerificationQueue: make(map[string]*messages.MessageWrapper),
 	}
@@ -75,25 +74,21 @@ func (c CryptoComponent) ProcessEgressMessages() {
 		// Look up the processor based on the message
 		// XXX: apply the LPM filter for the right processor here
 		// XXX: processor is identified by the name only
-		// if !msg.IsRequest() {
-
 		var err error
 		msg, err = addAuthenticator(msg, c.cryptoProcessor)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		c.codecComponent.Enqueue(msg)
-		// }
+		c.downstream.Enqueue(msg)
 
-		// XXX: move this code to a function
-		if msg.GetPacketType() == tlvCodec.T_INTEREST {
+    	// Save a reocrd for all egress requests
+		if msg.GetPacketType() == codec.T_INTEREST {
 			c.pendingMap[msg.Identifier()] = msg
 		}
 	}
 }
 
 func (c CryptoComponent) handleIngressRequest(msg *messages.MessageWrapper) {
-	// XXX: what else needs to be done here?
 	c.ingress <- msg
 }
 
@@ -105,7 +100,7 @@ func (c *CryptoComponent) processPendingResponses(msg *messages.MessageWrapper) 
 		c.handleIngressResponse(dependentRequest)
 		delete(c.pendingVerificationQueue, msg.Identifier())
 
-		if msg.PayloadType() == tlvCodec.T_PAYLOADTYPE_KEY {
+		if msg.PayloadType() == codec.T_PAYLOADTYPE_KEY {
 			payload := msg.Payload()
 			rawKey := publickey.Create(payload.Value())
 
@@ -152,14 +147,13 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 			keyMsg := interest.CreateFromLink(link)
 			keyPacket := messages.Package(keyMsg)
 
-			c.codecComponent.Enqueue(keyPacket)
+			c.downstream.Enqueue(keyPacket)
 			c.pendingMap[keyPacket.Identifier()] = keyPacket
 
 			// Save the reference to this response
 			c.pendingVerificationQueue[keyPacket.Identifier()] = msg
 		} else {
 			if c.cryptoProcessor.Verify(request, msg) {
-                log.Println("Verifying the response")
 				c.checkTrustProperties(msg)
 			} else {
                 log.Println("Dropping the response")
@@ -174,10 +168,10 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 
 func (c CryptoComponent) ProcessIngressMessages() {
 	for {
-		msg := c.codecComponent.Dequeue()
+		msg := c.downstream.Dequeue()
 
 		// Hand off the message to the request/response handler
-		if msg.GetPacketType() != tlvCodec.T_INTEREST {
+		if msg.GetPacketType() != codec.T_INTEREST {
 			go c.handleIngressResponse(msg)
 		} else {
 			go c.handleIngressRequest(msg)
