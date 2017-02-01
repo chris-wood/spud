@@ -4,7 +4,7 @@ import "time"
 import "log"
 
 import "github.com/chris-wood/spud/stack"
-import "github.com/chris-wood/spud/util"
+import "github.com/chris-wood/spud/util/random"
 import "github.com/chris-wood/spud/stack/component/tunnel"
 import "github.com/chris-wood/spud/codec"
 import "github.com/chris-wood/spud/messages"
@@ -33,7 +33,7 @@ func NewSecurePortal(s stack.Stack) SecurePortal {
 }
 
 func (n SecurePortal) Connect(prefix name.Name) {
-	randomSuffix, _ := util.GenerateRandomString(16)
+	randomSuffix, _ := random.GenerateRandomString(16)
 	bareHelloName, _ := prefix.AppendComponent(connectString)
 	bareHelloName, _ = bareHelloName.AppendComponent(randomSuffix)
 
@@ -56,7 +56,7 @@ func (n SecurePortal) Connect(prefix name.Name) {
 	}
 	hello := kex.KEXFullHello(bareHello, reject.(*kex.KEX))
 
-	randomSuffix, _ = util.GenerateRandomString(16)
+	randomSuffix, _ = random.GenerateRandomString(16)
 	helloName, _ := prefix.AppendComponent(connectString)
 	helloName, _ = prefix.AppendComponent(randomSuffix)
 

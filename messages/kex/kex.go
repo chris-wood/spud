@@ -5,7 +5,7 @@ import "log"
 
 import "bytes"
 import "time"
-import "github.com/chris-wood/spud/util"
+import "github.com/chris-wood/spud/util/random"
 import "github.com/chris-wood/spud/codec"
 
 import "crypto/rand"
@@ -67,7 +67,7 @@ func KEXHello() *KEX {
     emap := make(map[string]KEXExtension)
 
     // Generate some random bytes
-    bytes, err := util.GenerateRandomBytes(_sourceChallengeSize)
+    bytes, err := random.GenerateRandomBytes(_sourceChallengeSize)
     if err != nil {
         return nil
     }
@@ -120,7 +120,7 @@ func KEXFullHello(bare, reject *KEX) *KEX {
     emap[_kSourceProof] = bare.extensionMap[_kSourceProof]
 
     // move challenge
-    moveProof, _ := util.GenerateRandomBytes(_sourceChallengeSize)
+    moveProof, _ := random.GenerateRandomBytes(_sourceChallengeSize)
     emap[_kMoveProof] = KEXExtension{codec.T_KEX_MOVE_PROOF, moveProof}
     emap[_kMoveChallenge] = KEXExtension{codec.T_KEX_MOVE_CHALLENGE, createChallenge(moveProof)}
 
@@ -162,7 +162,7 @@ func KEXHelloAccept(hello *KEX, macKey, encKey []byte) (*KEX, error) {
     emap[_kMoveToken] = KEXExtension{codec.T_KEX_MOVE_TOKEN, moveToken}
 
     // source token
-    sessionID, _ := util.GenerateRandomBytes(_sourceChallengeSize)
+    sessionID, _ := random.GenerateRandomBytes(_sourceChallengeSize)
     emap[_kSessionID] = KEXExtension{codec.T_KEX_SESSION_ID, sessionID}
 
     typeContainer := make([]byte, 2)
