@@ -2,6 +2,7 @@ package flic
 
 import "fmt"
 
+import "github.com/chris-wood/spud/util/chunker"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/hash"
@@ -177,18 +178,21 @@ func (f FLIC) Children() []codec.TLV {
 func (f FLIC) String() string {
     // return Identifier(c)
     // return c.name.String()
+    return "TODO"
 }
 
 // Message functions
 
 func (f FLIC) Encode() []byte {
     encoder := codec.Encoder{}
-    bytes := encoder.EncodeTLV(c)
+    bytes := encoder.EncodeTLV(f)
     return bytes
 }
 
 func (f FLIC) Name() name.Name {
-    return f.name
+    // XXX: need to add the name, as needed
+    var n name.Name
+    return n
 }
 
 func (f FLIC) GetPacketType() uint16 {

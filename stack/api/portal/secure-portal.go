@@ -32,7 +32,7 @@ func NewSecurePortal(s stack.Stack) SecurePortal {
 	return api
 }
 
-func (n SecurePortal) Connect(prefix name.Name) {
+func (n SecurePortal) Connect(prefix *name.Name) {
 	randomSuffix, _ := random.GenerateRandomString(16)
 	bareHelloName, _ := prefix.AppendComponent(connectString)
 	bareHelloName, _ = bareHelloName.AppendComponent(randomSuffix)
@@ -114,7 +114,11 @@ func (n SecurePortal) GetAsync(request *messages.MessageWrapper, callback Respon
 	})
 }
 
-func (n SecurePortal) Serve(prefix name.Name, callback RequestMessageCallback) {
+func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
+    if prefix == nil {
+        return
+    }
+
     established := false
     for {
         requestWrapper := n.apiStack.Dequeue()

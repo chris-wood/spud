@@ -49,33 +49,29 @@ func parseNameString(nameString string) ([]name_segment.NameSegment, error) {
 
 // Constructor functions
 
-func Parse(nameString string) (Name, error) {
-    var result Name
+func Parse(nameString string) (*Name, error) {
     parsedSegments, err := parseNameString(nameString)
     if (err != nil) {
         // TODO: what to return here?
-        return result, nameError{"rawr"}
+        return nil, nameError{"rawr"}
     }
-    return Name{Segments: parsedSegments}, nil
+    return &Name{Segments: parsedSegments}, nil
 }
 
-func New(segments []name_segment.NameSegment) Name {
-    return Name{Segments: segments}
+func New(segments []name_segment.NameSegment) *Name {
+    return &Name{Segments: segments}
 }
 
-func CreateFromTLV(nameTlv codec.TLV) (Name, error) {
-    var result Name
-
+func CreateFromTLV(nameTlv codec.TLV) (*Name, error) {
     children := make([]name_segment.NameSegment, 0)
-
     for _, child := range(nameTlv.Children()) {
         segment, err := name_segment.CreateFromTLV(child)
         if err != nil {
-            return result, err
+            return nil, err
         }
         children = append(children, segment)
     }
-    return Name{Segments: children}, nil
+    return &Name{Segments: children}, nil
 }
 
 // TLV interface functions
@@ -131,7 +127,11 @@ func (n Name) Prefix(num int) string {
     return prefix
 }
 
-func (n Name) IsPrefix(other Name) bool {
+func (n Name) IsPrefix(other *Name) bool {
+    if other == nil {
+        return false
+    }
+
     if len(other.Segments) < len(n.Segments) {
         return false
     }
@@ -153,13 +153,12 @@ func (n Name) SegmentStrings() []string {
     return segments
 }
 
-func (n Name) AppendComponent(component string) (Name, error) {
-    var newName Name
+func (n Name) AppendComponent(component string) (*Name, error) {
     segment, err := name_segment.Parse(component)
     if err != nil {
-        return newName, err
+        return nil, err
     }
-    return Name{Segments: append(n.Segments, segment)}, nil
+    return &Name{Segments: append(n.Segments, segment)}, nil
 }
 
 // String functions

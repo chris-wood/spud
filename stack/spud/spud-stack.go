@@ -55,7 +55,10 @@ func (s *SpudStack) Get(msg *messages.MessageWrapper, callback stack.MessageCall
 	s.head.Enqueue(msg)
 }
 
-func (s *SpudStack) Service(prefix name.Name, callback stack.MessageCallback) {
+func (s *SpudStack) Service(prefix *name.Name, callback stack.MessageCallback) {
+    if prefix == nil {
+        return // XXX: return an error
+    }
 	nameComponents := prefix.SegmentStrings()
 	s.prefixTable.Insert(nameComponents, callback)
 }
@@ -97,7 +100,7 @@ func (s *SpudStack) processInputQueue() {
 	}
 }
 
-func (s *SpudStack) AddSession(session *tunnel.Session, baseName name.Name) {
+func (s *SpudStack) AddSession(session *tunnel.Session, baseName *name.Name) {
     s.tunnelComponent.AddSession(session, baseName)
 }
 

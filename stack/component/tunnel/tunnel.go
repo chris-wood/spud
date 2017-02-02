@@ -13,7 +13,7 @@ import "github.com/chris-wood/spud/stack/component"
 type Tunnel struct {
 	ingress chan *messages.MessageWrapper
 	egress  chan *messages.MessageWrapper
-    baseName name.Name
+    baseName *name.Name
     downstream component.Component
     session *Session
 }
@@ -25,7 +25,7 @@ type TunnelComponent struct {
 	tunnels []*Tunnel
 }
 
-func NewTunnel(session *Session, baseName name.Name, downstream component.Component) *Tunnel {
+func NewTunnel(session *Session, baseName *name.Name, downstream component.Component) *Tunnel {
 	egress := make(chan *messages.MessageWrapper)
 	ingress := make(chan *messages.MessageWrapper)
 
@@ -95,7 +95,7 @@ func NewTunnelComponent(exitComponent component.Component) *TunnelComponent {
 	return &TunnelComponent{ingress: ingress, egress: egress, exitCodec: exitComponent, tunnels: make([]*Tunnel, 0)}
 }
 
-func (c *TunnelComponent) AddSession(session *Session, baseName name.Name) {
+func (c *TunnelComponent) AddSession(session *Session, baseName *name.Name) {
     if len(c.tunnels) == 0 {
         tunnel := NewTunnel(session, baseName, c.exitCodec)
         go tunnel.ProcessEgressMessages()

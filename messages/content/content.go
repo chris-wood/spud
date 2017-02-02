@@ -8,7 +8,7 @@ import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/codec"
 
 type Content struct {
-    name name.Name
+    name *name.Name
     dataPayload payload.Payload
     payloadType uint16
 
@@ -25,21 +25,20 @@ func (e contentError) Error() string {
 
 // Constructors
 
-func CreateWithName(stubName name.Name) *Content {
+func CreateWithName(stubName *name.Name) *Content {
     var dataPayload payload.Payload
     return &Content{name: stubName, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
 func CreateWithPayload(dataPayload payload.Payload) *Content {
-    var name name.Name
+    return &Content{name: nil, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
+}
+
+func CreateWithNameAndPayload(name *name.Name, dataPayload payload.Payload) *Content {
     return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
 }
 
-func CreateWithNameAndPayload(name name.Name, dataPayload payload.Payload) *Content {
-    return &Content{name: name, dataPayload: dataPayload, payloadType: codec.T_PAYLOADTYPE_DATA, containers: make([]codec.TLV, 0)}
-}
-
-func CreateWithNameAndTypedPayload(name name.Name, payloadType uint16, dataPayload payload.Payload) *Content {
+func CreateWithNameAndTypedPayload(name *name.Name, payloadType uint16, dataPayload payload.Payload) *Content {
     return &Content{name: name, dataPayload: dataPayload, payloadType: payloadType, containers: make([]codec.TLV, 0)}
 }
 
@@ -52,8 +51,7 @@ func CreateWithNameAndTypedPayload(name name.Name, payloadType uint16, dataPaylo
 // }
 
 func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
-    var result Content
-    var contentName name.Name
+    var contentName *name.Name
     var dataPayload payload.Payload
     var err error
 
@@ -63,7 +61,7 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
         if tlv.Type() == codec.T_NAME {
             contentName, err = name.CreateFromTLV(tlv)
             if err != nil {
-                return &result, err
+                return nil, err
             }
         } else if tlv.Type() == codec.T_PAYLOAD {
             dataPayload = payload.Create(tlv.Value())
@@ -165,7 +163,7 @@ func (c Content) Encode() []byte {
     return bytes
 }
 
-func (c Content) Name() name.Name {
+func (c Content) Name() *name.Name {
     return c.name
 }
 
@@ -173,8 +171,8 @@ func (c Content) GetPacketType() uint16 {
     return codec.T_OBJECT
 }
 
-func (c Content) Payload() payload.Payload {
-    return c.dataPayload
+func (c Content) Payload() *payload.Payload {
+    return &c.dataPayload
 }
 
 func (c Content) PayloadType() uint16 {

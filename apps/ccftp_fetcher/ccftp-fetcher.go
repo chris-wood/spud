@@ -3,7 +3,7 @@ package main
 import "flag"
 import "fmt"
 
-import "github.com/chris-wood/spud/stack"
+import "github.com/chris-wood/spud/stack/spud"
 import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
 
@@ -16,7 +16,7 @@ func displayResponse(response []byte) {
 }
 
 func (f CCFTPFetcher) fetch(file string) {
-    myStack, _ := stack.CreateRaw("")
+    myStack, _ := spud.CreateRaw("")
     ccnPortal := portal.NewPortal(myStack)
     api := adapter.NewKVSAPI(ccnPortal)
 

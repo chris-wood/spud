@@ -4,7 +4,7 @@ import "os"
 import "flag"
 import "strings"
 
-import "github.com/chris-wood/spud/stack"
+import "github.com/chris-wood/spud/stack/spud"
 import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
 
@@ -37,7 +37,7 @@ func (s CCFTPServer) loadFile(name string, response []byte) []byte {
 }
 
 func (s CCFTPServer) serve(directory string) {
-    myStack, _ := stack.CreateRaw("")
+    myStack, _ := spud.CreateRaw("")
     ccnPortal := portal.NewPortal(myStack)
     api := adapter.NewKVSAPI(ccnPortal)
     api.Serve(s.prefix, s.loadFile)

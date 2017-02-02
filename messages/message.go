@@ -29,8 +29,8 @@ type Message interface {
     Encode() []byte
 
     // Messages have names, identifiers, and optionally, a payload
-    Name() name.Name
-    Payload() payload.Payload
+    Name() *name.Name
+    Payload() *payload.Payload
     PayloadType() uint16
 
     // Identifier() string
@@ -150,11 +150,11 @@ func (m *MessageWrapper) GetPacketType() uint16 {
     return m.msg.GetPacketType()
 }
 
-func (m *MessageWrapper) Name() name.Name {
+func (m *MessageWrapper) Name() *name.Name {
     return m.msg.Name()
 }
 
-func (m *MessageWrapper) Payload() payload.Payload {
+func (m *MessageWrapper) Payload() *payload.Payload {
     return m.msg.Payload()
 }
 

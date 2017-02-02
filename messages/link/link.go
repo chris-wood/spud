@@ -7,7 +7,7 @@ import "fmt"
 // import "encoding/json"
 
 type Link struct {
-    linkName name.Name
+    linkName *name.Name
     keyId hash.Hash
     contentId hash.Hash
 }
@@ -22,13 +22,13 @@ func (e linkError) Error() string {
 
 // Constructors
 
-func Create(linkName name.Name, keyId, contentId hash.Hash) Link {
+func Create(linkName *name.Name, keyId, contentId hash.Hash) Link {
     return Link{linkName, keyId, contentId}
 }
 
 // API
 
-func (l Link) Name() name.Name {
+func (l Link) Name() *name.Name {
     return l.linkName
 }
 

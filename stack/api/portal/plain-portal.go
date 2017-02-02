@@ -38,7 +38,10 @@ func (n PlainPortal) GetAsync(request *messages.MessageWrapper, callback Respons
 	})
 }
 
-func (n PlainPortal) Serve(prefix name.Name, callback RequestMessageCallback) {
+func (n PlainPortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
+    if prefix == nil {
+        return
+    }
 	n.apiStack.Service(prefix, func(msg *messages.MessageWrapper) {
 		response := callback(msg)
 		n.apiStack.Enqueue(response)
