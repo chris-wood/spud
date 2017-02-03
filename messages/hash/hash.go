@@ -5,8 +5,12 @@ import "hash"
 import "fmt"
 
 // import "encoding/json"
+type HashType uint16
+const HashTypeSHA256 uint16 = 0x0001
+const HashTypeSHA512 uint16 = 0x0002
 
 type Hash struct {
+    hashType uint16
     digest []byte
 }
 
@@ -20,14 +24,8 @@ func (e hashError) Error() string {
 
 // Constructors
 
-func Create(hash hash.Hash) Hash {
-    return Hash{digest: hash.Sum(nil)}
-}
-
-func CreateTruncated(hash hash.Hash, truncatedLength int) Hash {
-    bytes := make([]byte, truncatedLength)
-    bytes = hash.Sum(bytes)
-    return Hash{digest: bytes}
+func Create(hashType HashType, value []byte) Hash {
+    return Hash{hashType, value}
 }
 
 func CreateFromTLV(tlv codec.TLV) (Hash, error) {

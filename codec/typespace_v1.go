@@ -71,3 +71,4 @@ const T_SIGTIME uint16 = 0x000F
 
 // TODO
 const T_HASH uint16 = 0x0001
+const T_HASH_SHA256 uint16 = 0x0001

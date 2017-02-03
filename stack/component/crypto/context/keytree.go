@@ -1,5 +1,7 @@
 package context
 
+type KeyPath []Key
+
 type KeyTree struct {
 	PolicyName string
 	Keys       []Key
@@ -16,4 +18,10 @@ func (tree *KeyTree) AddKey(key Key) {
 
 func (tree *KeyTree) AddChild(child *KeyTree) {
 	tree.Children = append(tree.Children, child)
+}
+
+func (tree *KeyTree) GetKeyPaths() ([]KeyPath) {
+    paths := make([]KeyPath, 0)
+
+    // Do a DFS through the tree, accumulating the keys as you go
 }

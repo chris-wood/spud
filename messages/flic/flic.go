@@ -62,8 +62,16 @@ type HashGroup struct {
     Pointers []SizedPointer
 }
 
-type BlockHashGroup struct {
-    metadata *HashGroupMetadata
+func createEmptyHashGroup() *HashGroup {
+    return &HashGroup{nil, make([]SizedPointer, 0)}
+}
+
+func (h *HashGroup) AddPointer(p SizedPointer) bool {
+    if len(h.Pointers) < 10 {
+        h.Pointers = append(h.Pointers, p)
+        return true
+    }
+    return false
 }
 
 type FLIC struct {
@@ -80,8 +88,40 @@ func (e flicError) Error() string {
 
 // Constructors
 
-func CreateFromChunker(chunk chunker.Chunker) *FLIC {
-    return &FLIC{make([]HashGroup, 0)}
+func CreateFromChunker(dataChunker chunker.Chunker) *FLIC {
+    root := createEmptyHashGroup()
+
+    dataSize := 0
+    for chunk := range(dataChunker.GetChannel()) {
+        dataPayload := payload.Create(chunk)
+        namelessLeaf := content.CreateWithPayload(dataPayload)
+        namelessMsg := message.Package(namelessLeaf)
+        leafHashRaw := namelessMsg.ComputeMessageHash(sha256.New())
+        leafHash := hash.Create(hash.HashTypeSHA256, leafHashRaw)
+        leafPointer := SizedPointer{size: len(chunk), ptrHash: leafHash}
+        dataSize := len(chunk)
+
+        // XXX: need to keep a reference to this nameless content object message
+
+        if ok := root.AddPointer(leafPointer); !ok {
+            // create a new parent (FLIC), add the old parent to the new one, and then proceed
+            parentFlic := &FLIC{[]HashGroup(root)}
+            parentMsg := message.Package(parentFlic)
+            parentHashRaw := parentMsg.ComputeMessageHash(sha256.New())
+            parentHash := hash.Create(hash.HashTypeSHA256, parentHashRaw)
+            parentPointer := SizedPointer{size: dataSize, ptrHash: parentHash}
+            dataSize := 0
+
+            newRoot := createEmptyHashGroup()
+            newRoot.AddPointer(parentPointer)
+
+            // XXX: need to keep a reference to the last hash group
+
+            root = newRoot
+        }
+    }
+
+    return &FLIC{[]HashGroup(root)}
 }
 
 func CreateFromTLV(topLevelTLV codec.TLV) (*FLIC, error) {

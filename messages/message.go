@@ -1,6 +1,7 @@
 package messages
 
 import "fmt"
+import "log"
 import "hash"
 import "crypto/sha256"
 import "github.com/chris-wood/spud/codec"
@@ -32,6 +33,8 @@ type Message interface {
     Name() *name.Name
     Payload() *payload.Payload
     PayloadType() uint16
+
+    // GetHashRestriction() hash.Hash
 
     // Identifier() string
     // NamelessIdentifier() string
@@ -87,7 +90,7 @@ func CreateFromTLV(tlv []codec.TLV) (*MessageWrapper, error) {
             validationPayload = validation.NewValidationPayload(root.Value())
             break
         default:
-            fmt.Println("Invalid type:", string(root.Type()))
+            log.Println("Invalid type:", string(root.Type()))
             return nil, messageError{"Unable to create a message from the top-level TLV type " + string(root.Type())}
         }
     }
@@ -111,14 +114,17 @@ func (m *MessageWrapper) HashProtectedRegion(hasher hash.Hash) []byte {
 }
 
 func (m *MessageWrapper) ComputeMessageHash(hasher hash.Hash) []byte {
+    // XXX: this *must* include the validation algoritm, if one is there.
     bytes := m.Encode()
     hasher.Write(bytes)
-    return hasher.Sum(nil)
+    digest := hasher.Sum(nil)
+    return digest
 }
 
 func (m *MessageWrapper) Identifier() string {
-    if m.msg.Name().Length() > 0 {
-        return m.msg.Name().String()
+    msgName := msg.GetName()
+    if msgName != nil {
+        return msgName.String()
     } else {
         hash := m.ComputeMessageHash(sha256.New())
         return string(hash)
