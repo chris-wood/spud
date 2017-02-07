@@ -20,8 +20,12 @@ const T_HASH_REST uint16 = 0x0003
 const T_PAYLDTYPE uint16 = 0x0005
 const T_EXPIRY uint16 = 0x0006
 const T_HASHGROUP uint16 = 0x0007
-const T_BLOCKHASHGROUP uint16 = 0x0008
 const T_KEX uint16 = 0x0009
+
+// HashGroup containers
+const T_POINTER_SIZE uint16 = 0x0001
+const T_DATA_POINTER uint16 = 0x0002
+const T_MANIFEST_POINTER uint16 = 0x0003
 
 // name sements
 const T_NAMESEG_NAME uint16 = 0x0001

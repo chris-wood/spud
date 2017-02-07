@@ -122,7 +122,7 @@ func (m *MessageWrapper) ComputeMessageHash(hasher hash.Hash) []byte {
 }
 
 func (m *MessageWrapper) Identifier() string {
-    msgName := msg.GetName()
+    msgName := m.Name()
     if msgName != nil {
         return msgName.String()
     } else {

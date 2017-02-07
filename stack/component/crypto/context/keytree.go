@@ -24,4 +24,7 @@ func (tree *KeyTree) GetKeyPaths() ([]KeyPath) {
     paths := make([]KeyPath, 0)
 
     // Do a DFS through the tree, accumulating the keys as you go
+    // XXX
+
+    return paths
 }

@@ -4,14 +4,14 @@ import "testing"
 
 import "github.com/chris-wood/spud/messages/name"
 
-func createName(nameString string) name.Name {
+func createName(nameString string) *name.Name {
     result, _ := name.Parse(nameString)
     return result
 }
 
 func TestInsert(t *testing.T) {
     var cases = []struct {
-        inputName name.Name
+        inputName *name.Name
         inserted bool
     }{
         { createName("/hello/world"), true},

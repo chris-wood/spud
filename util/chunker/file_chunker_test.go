@@ -17,7 +17,6 @@ func TestFileChunker(t *testing.T) {
         t.Errorf("Failed to write data to the file")
     }
 
-
     fChunker, err := NewFileChunker(fname, chunkSize)
     if err != nil {
         t.Error("Unable to create the file chunker:", err)

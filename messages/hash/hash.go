@@ -1,16 +1,15 @@
 package hash
 
-import "github.com/chris-wood/spud/codec"
-import "hash"
 import "fmt"
 
-// import "encoding/json"
+import "github.com/chris-wood/spud/codec"
+
 type HashType uint16
-const HashTypeSHA256 uint16 = 0x0001
-const HashTypeSHA512 uint16 = 0x0002
+const HashTypeSHA256 HashType = 0x0001
+const HashTypeSHA512 HashType = 0x0002
 
 type Hash struct {
-    hashType uint16
+    hashType HashType
     digest []byte
 }
 

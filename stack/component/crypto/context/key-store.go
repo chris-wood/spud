@@ -28,17 +28,19 @@ func (ke *KeyStore) AddKey(nameSchema name.Name, theKey Key) {
         tree := keyTreeBlob.(*KeyTree)
         tree.AddKey(theKey)
     } else {
-        tree := CreateKeyTree(nameSchema)
-        tree.AddKey(theKey)
-        ke.keyTree.Insert(segments, tree)
+        // tree := CreateKeyTree(nameSchema)
+        // tree.AddKey(theKey)
+        // ke.keyTree.Insert(segments, tree)
     }
 }
 
 func (ke *KeyStore) GetKey(nameSchema name.Name) ([]KeyPath, error) {
     paths := make([]KeyPath, 0)
-    segments := name.SegmentStrings()
-    if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
-        paths = keyTreeBlob.GetKeyPaths()
+    segments := nameSchema.SegmentStrings()
+    if _, ok := ke.keyTree.Lookup(segments); ok {
+        // paths = keyTreeBlob.GetKeyPaths()
+
+        paths := []KeyPath{}
         return paths, nil
     } else {
         return paths, keyStoreError{"Key for name not found"}
