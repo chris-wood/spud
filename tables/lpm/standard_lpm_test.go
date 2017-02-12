@@ -18,7 +18,7 @@ func TestInsert(t *testing.T) {
         { createName("/hello/*"), true},
     }
 
-    kvs := LPM{}
+    kvs := StandardLPM{}
     value := 0
 
     for _, testCase := range cases {

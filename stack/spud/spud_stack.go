@@ -169,7 +169,7 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 		head:            cryptoComponent,
 		pendingQueue:    make(chan *messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
 		pendingMap:      make(map[string]stack.MessageCallback),
-		prefixTable:     lpm.LPM{},
+		prefixTable:     lpm.StandardLPM{},
 	}
 
 	// Start the stack processing loop -- the order here matters

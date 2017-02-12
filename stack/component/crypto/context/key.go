@@ -3,7 +3,7 @@ package context
 // Key Type
 const KeyTypeEC uint8 = 0
 const KeyTypeRSA uint8 = 1
-const KeyTypeBinary uint8 = 2
+const KeyTypeOpaque uint8 = 2
 
 // Curves
 const KeyCurveP256 uint8 = 0
@@ -21,5 +21,25 @@ type Key interface {
 	KeyType()   uint8
 	Algorithm() uint16
 
-	Value() interface{}
+	Value() []byte
+}
+
+type SymmetricKey struct {
+    bytes []byte
+}
+
+func (k SymmetricKey) Purpose() uint8 {
+    return uint8(0)
+}
+
+func (k SymmetricKey) KeyType() uint8 {
+    return KeyTypeOpaque
+}
+
+func (k SymmetricKey) Algorithm() uint16 {
+    return uint16(0)
+}
+
+func (k SymmetricKey) Value() []byte {
+    return k.bytes
 }

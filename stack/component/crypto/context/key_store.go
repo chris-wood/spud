@@ -2,10 +2,13 @@ package context
 
 import "github.com/chris-wood/spud/tables/lpm"
 import "github.com/chris-wood/spud/messages/name"
+
 import "fmt"
 
+type KeyPath []Key
+
 type KeyStore struct {
-	keyTree *lpm.LPM
+	keyTree lpm.LPM
 }
 
 type keyStoreError struct {
@@ -18,7 +21,7 @@ func (c keyStoreError) Error() string {
 
 func NewKeyStore() *KeyStore {
 	return &KeyStore{
-		keyTree: new(lpm.LPM),
+		keyTree: &lpm.StandardLPM{},
 	}
 }
 
@@ -28,21 +31,19 @@ func (ke *KeyStore) AddKey(nameSchema name.Name, theKey Key) {
         tree := keyTreeBlob.(*KeyTree)
         tree.AddKey(theKey)
     } else {
-        // tree := CreateKeyTree(nameSchema)
-        // tree.AddKey(theKey)
-        // ke.keyTree.Insert(segments, tree)
+        tree := CreateKeyTree(nameSchema)
+        tree.AddKey(theKey)
+        ke.keyTree.Insert(segments, tree)
     }
 }
 
-func (ke *KeyStore) GetKey(nameSchema name.Name) ([]KeyPath, error) {
-    paths := make([]KeyPath, 0)
+func (ke *KeyStore) GetKeys(nameSchema name.Name) ([]KeyPath, error) {
     segments := nameSchema.SegmentStrings()
-    if _, ok := ke.keyTree.Lookup(segments); ok {
-        // paths = keyTreeBlob.GetKeyPaths()
-
-        paths := []KeyPath{}
+    if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
+        keyTree := keyTreeBlob.(*KeyTree)
+        paths := keyTree.GetKeyPaths()
         return paths, nil
     } else {
-        return paths, keyStoreError{"Key for name not found"}
+        return []KeyPath{}, keyStoreError{"Key for name not found"}
     }
 }
