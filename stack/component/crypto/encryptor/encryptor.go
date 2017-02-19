@@ -1,13 +1,14 @@
-package validator
+package encryptor
 
 // import "github.com/chris-wood/spud/codec"
 // import "github.com/chris-wood/spud/messages"
 // import "github.com/chris-wood/spud/messages/validation"
 // import "github.com/chris-wood/spud/messages/validation/publickey"
 
-// import "crypto/rand"
-// import "crypto/rsa"
-// import "crypto/sha256"
+import "crypto/rand"
+import "crypto/rsa"
+import "crypto/sha256"
+
 // import "crypto/x509"
 // import "crypto"
 // import "hash"
@@ -49,10 +50,20 @@ func (p processorError) Error() string {
 // return RSAProcessor{privateKey: privateKey, publicKey: publicKey}, nil
 // }
 
-// func (p RSAEncryptor) Encrypt(identifier string, payload []byte) ([]byte, error) {
-//     // XXX
-// }
-//
-// func (p RSAEncryptor) Decrypt(identifier string, payload []byte) bool {
-//     // XXX
-// }
+func (p RSAEncryptor) Encrypt(payload []byte) ([]byte, error) {
+    label := []byte("")
+    hash := sha256.New()
+
+    ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, payload, label)
+
+    return ciphertext, err
+}
+
+func (p RSAEncryptor) Decrypt(identifier string, ciphertext []byte) bool {
+    label := []byte("")
+    hash := sha256.New()
+
+    plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, ciphertext, label)
+
+    return plaintext, err
+}

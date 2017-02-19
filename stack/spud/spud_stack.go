@@ -16,6 +16,7 @@ import "github.com/chris-wood/spud/stack/config"
 import "github.com/chris-wood/spud/stack/cache"
 import "github.com/chris-wood/spud/stack/pit"
 import "github.com/chris-wood/spud/stack/component"
+import "github.com/chris-wood/spud/stack/component/transport"
 import "github.com/chris-wood/spud/stack/component/tunnel"
 import "github.com/chris-wood/spud/stack/component/connector"
 import "github.com/chris-wood/spud/stack/component/codec"
@@ -26,6 +27,7 @@ import "github.com/chris-wood/spud/stack/component/crypto/context"
 type SpudStack struct {
 	cryptoComponent component.Component
 	codecComponent  component.Component
+    transportComponent  component.Component
     tunnelComponent *tunnel.TunnelComponent
 	head            component.Component
 	bottom          component.Component
@@ -138,10 +140,13 @@ func Create(config config.StackConfig) (*SpudStack, error) {
     // Create the tunnel component
     tunnelComponent := tunnel.NewTunnelComponent(codecComponent)
 
+    // Create the transport component
+    transportComponent := transport.NewTransportComponent(tunnelComponent)
+
 	// Create crypto component
 	// XXX: delegate validator and encryptor creation to the crypto component
 	trustStore := context.NewTrustStore()
-	cryptoComponent := crypto.NewCryptoComponent(trustStore, tunnelComponent)
+	cryptoComponent := crypto.NewCryptoComponent(trustStore, transportComponent)
 
 	// Create the right crypto processors
 	if len(config.Keys) > 0 {
@@ -165,11 +170,12 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 	stack := &SpudStack{
 		cryptoComponent: cryptoComponent,
 		codecComponent:  codecComponent,
+        transportComponent: transportComponent,
         tunnelComponent: tunnelComponent,
 		head:            cryptoComponent,
 		pendingQueue:    make(chan *messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
 		pendingMap:      make(map[string]stack.MessageCallback),
-		prefixTable:     lpm.StandardLPM{},
+		prefixTable:     &lpm.StandardLPM{},
 	}
 
 	// Start the stack processing loop -- the order here matters
@@ -177,6 +183,8 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 	go codecComponent.ProcessIngressMessages()
     go tunnelComponent.ProcessEgressMessages()
 	go tunnelComponent.ProcessIngressMessages()
+    go transportComponent.ProcessEgressMessages()
+	go transportComponent.ProcessIngressMessages()
 	go cryptoComponent.ProcessEgressMessages()
 	go cryptoComponent.ProcessIngressMessages()
 	go stack.processInputQueue()

@@ -16,6 +16,7 @@ func displayResponse(response []byte) {
 }
 
 func generateResponse(name string, response []byte) []byte {
+    fmt.Println("here's the response")
     return []byte("hello, spud!")
 }
 
