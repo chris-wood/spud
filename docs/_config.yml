@@ -1,1 +1,11 @@
-theme: jekyll-theme-cayman
+# Site settings
+title: SPUD
+email: 
+description: SPUD | the user-space COREO stack
+baseurl: ""
+url: ""
+twitter_username: phonzbm
+github_username:  chris-wood
+
+# Build settings
+markdown: kramdown
