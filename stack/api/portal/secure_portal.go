@@ -20,8 +20,8 @@ const connectString string = "CONNECT"
 
 type SecurePortal struct {
 	apiStack stack.Stack
-    macKey []byte
-    encKey []byte
+    	macKey []byte
+    	encKey []byte
 }
 
 func NewSecurePortal(s stack.Stack) SecurePortal {
@@ -44,7 +44,6 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	n.apiStack.Enqueue(messages.Package(bareHelloRequest))
 
 	// Wait for the response, and use it to build the full hello
-	// time.Sleep(100 * time.Millisecond)
 	replyWrapper := n.apiStack.Dequeue()
 	reply := replyWrapper.InnerMessage()
 	log.Println("Got the REJECT")
@@ -65,7 +64,6 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	n.apiStack.Enqueue(messages.Package(helloRequest))
 
 	// Wait for the response to complete the KEX
-	// time.Sleep(100 * time.Millisecond)
 	replyWrapper = n.apiStack.Dequeue()
 	reply = replyWrapper.InnerMessage()
 
@@ -82,10 +80,6 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	copy(peerPublic[:], acceptKEX.GetPublicKeyShare())
 	copy(privateKey[:], hello.GetPrivateKeyShare())
 	box.Precompute(&sharedKey, &peerPublic, &privateKey)
-
-	// Create and start the session
-	// session := esic.NewESIC(n.apiStack, sharedKey[:], acceptKEX.GetSessionID())
-	// handler(session)
 
     session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
     n.apiStack.AddSession(session, prefix)
@@ -113,6 +107,21 @@ func (n SecurePortal) GetAsync(request *messages.MessageWrapper, callback Respon
 		callback(msg)
 	})
 }
+
+func (p SecurePortal) GetAsyncWithTimeout(request *messages.MessageWrapper, timeout time.Duration, callback ResponseMessageCallback) {
+	signalChannel := make(chan *messages.MessageWrapper, 1)
+	p.apiStack.Get(request, func(msg *messages.MessageWrapper) {
+		signalChannel <- msg
+	})
+
+	select {
+	case data := <-signalChannel:
+		callback(data)
+	case <-time.After(timeout):
+		p.apiStack.Cancel(request)
+	}
+}
+
 
 func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
     if prefix == nil {

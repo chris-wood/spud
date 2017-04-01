@@ -11,9 +11,10 @@ type ResponseMessageCallback func(*messages.MessageWrapper)
 
 type Portal interface {
 	Get(request *messages.MessageWrapper, timeout time.Duration) (*messages.MessageWrapper, error)
-    GetAsync(request *messages.MessageWrapper, callback ResponseMessageCallback)
-    Serve(prefix *name.Name, callback RequestMessageCallback)
-    Produce(data *messages.MessageWrapper)
+    	GetAsync(request *messages.MessageWrapper, callback ResponseMessageCallback)
+    	GetAsyncWithTimeout(request *messages.MessageWrapper, timeout time.Duration, callback ResponseMessageCallback)
+    	Serve(prefix *name.Name, callback RequestMessageCallback)
+    	Produce(data *messages.MessageWrapper)
 }
 
 type PortalError struct {

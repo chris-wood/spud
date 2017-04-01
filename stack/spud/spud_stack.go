@@ -45,6 +45,13 @@ func (s *SpudStack) Dequeue() *messages.MessageWrapper {
 	return <-s.pendingQueue
 }
 
+func (s *SpudStack) Cancel(msg *messages.MessageWrapper) {
+	_, ok := s.pendingMap[msg.Identifier()]
+	if ok {
+		delete(s.pendingMap, msg.Identifier())
+	}
+}
+
 func (s *SpudStack) Get(msg *messages.MessageWrapper, callback stack.MessageCallback) {
 	if msg.GetPacketType() != tlvCodec.T_INTEREST {
 		return
@@ -181,9 +188,9 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 	// Start the stack processing loop -- the order here matters
 	go codecComponent.ProcessEgressMessages()
 	go codecComponent.ProcessIngressMessages()
-    go tunnelComponent.ProcessEgressMessages()
+    	go tunnelComponent.ProcessEgressMessages()
 	go tunnelComponent.ProcessIngressMessages()
-    go transportComponent.ProcessEgressMessages()
+    	go transportComponent.ProcessEgressMessages()
 	go transportComponent.ProcessIngressMessages()
 	go cryptoComponent.ProcessEgressMessages()
 	go cryptoComponent.ProcessIngressMessages()

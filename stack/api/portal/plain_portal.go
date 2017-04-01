@@ -38,6 +38,20 @@ func (n PlainPortal) GetAsync(request *messages.MessageWrapper, callback Respons
 	})
 }
 
+func (p PlainPortal) GetAsyncWithTimeout(request *messages.MessageWrapper, timeout time.Duration, callback ResponseMessageCallback) {
+	signalChannel := make(chan *messages.MessageWrapper, 1)
+	p.apiStack.Get(request, func(msg *messages.MessageWrapper) {
+		signalChannel <- msg
+	})
+
+	select {
+	case data := <-signalChannel:
+		callback(data)
+	case <-time.After(timeout):
+		p.apiStack.Cancel(request)
+	}
+}
+
 func (n PlainPortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
     if prefix == nil {
         return
