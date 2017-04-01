@@ -6,34 +6,34 @@ import "io/ioutil"
 import "testing"
 
 func TestCreate(t *testing.T) {
-    data := make([]byte, 1024)
-    for i := 0; i < 1024; i++ {
-        data[i] = uint8(i)
-    }
+	data := make([]byte, 1024)
+	for i := 0; i < 1024; i++ {
+		data[i] = uint8(i)
+	}
 
-    chunkSize := 256
-    fname := "/tmp/flic_data_test"
+	chunkSize := 256
+	fname := "/tmp/flic_data_test"
 
-    err := ioutil.WriteFile(fname, data, 0644)
-    if err != nil {
-        t.Errorf("Failed to write data to the file")
-    }
+	err := ioutil.WriteFile(fname, data, 0644)
+	if err != nil {
+		t.Errorf("Failed to write data to the file")
+	}
 
-    fChunker, err := chunker.NewFileChunker(fname, chunkSize)
-    if err != nil {
-        t.Error("Unable to create the file chunker:", err)
-    }
+	fChunker, err := chunker.NewFileChunker(fname, chunkSize)
+	if err != nil {
+		t.Error("Unable to create the file chunker:", err)
+	}
 
-    messages := CreateFLICTreeFromChunker(fChunker)
+	messages := CreateFLICTreeFromChunker(fChunker)
 
-    // XXX: compute the expected number of FLIC entries
+	// XXX: compute the expected number of FLIC entries
 
-    if len(messages) == 0 {
-        t.Error("Invalid message collection returned")
-    }
-    t.Log(len(messages))
+	if len(messages) == 0 {
+		t.Error("Invalid message collection returned")
+	}
+	t.Log(len(messages))
 }
 
 func TestLookup(t *testing.T) {
-    // pass
+	// pass
 }

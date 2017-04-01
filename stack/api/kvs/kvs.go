@@ -59,14 +59,14 @@ func (n *KVSAPI) GetAsync(nameString string, callback ResponseCallback) error {
 }
 
 func (n *KVSAPI) Serve(nameString string, callback RequestCallback) {
-    prefix, err := name.Parse(nameString)
-    if err == nil {
-        n.p.Serve(prefix, func(msg *messages.MessageWrapper) *messages.MessageWrapper {
-    		encapPayload := msg.Payload().Value()
-    		data := callback(msg.Identifier(), encapPayload)
-    		dataPayload := payload.Create(data)
-    		response := messages.Package(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
-    		return response
-    	})
-    }
+	prefix, err := name.Parse(nameString)
+	if err == nil {
+		n.p.Serve(prefix, func(msg *messages.MessageWrapper) *messages.MessageWrapper {
+			encapPayload := msg.Payload().Value()
+			data := callback(msg.Identifier(), encapPayload)
+			dataPayload := payload.Create(data)
+			response := messages.Package(content.CreateWithNameAndPayload(msg.Name(), dataPayload))
+			return response
+		})
+	}
 }

@@ -31,7 +31,7 @@ func NewCodecComponent(conn connector.ForwarderConnector, stackCache *cache.Cach
 }
 
 func readWord(bytes []byte) uint16 {
-	return (uint16(bytes[0])<<8) | uint16(bytes[1])
+	return (uint16(bytes[0]) << 8) | uint16(bytes[1])
 }
 
 func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) []byte {
@@ -74,19 +74,19 @@ func (c CodecComponent) ProcessEgressMessages() {
 		messageType := readWord(messageBytes)
 		wireFormat := buildPacket(messageType, optionalHeader, messageBytes)
 
-        // If we have a content object, insert it into the cache and forward if a PIT entry awaits
-        // Otherwise, if it's an interest without a PIT entry, forward it
-        // Otherwise, it's an interest with a PIT entry, so aggregate
-        if messageType != codec.T_INTEREST {
+		// If we have a content object, insert it into the cache and forward if a PIT entry awaits
+		// Otherwise, if it's an interest without a PIT entry, forward it
+		// Otherwise, it's an interest with a PIT entry, so aggregate
+		if messageType != codec.T_INTEREST {
 			c.stackCache.Insert(msg.Identifier(), wireFormat)
-            if _, found := c.stackPit.Lookup(msg.Identifier()); found {
-                c.connector.Write(wireFormat)
-            }
-        } else if _, found := c.stackPit.Lookup(msg.Identifier()); !found {
-            c.connector.Write(wireFormat)
-        } else {
-            c.stackPit.Insert(msg.Identifier(), msg) // this should aggregate
-        }
+			if _, found := c.stackPit.Lookup(msg.Identifier()); found {
+				c.connector.Write(wireFormat)
+			}
+		} else if _, found := c.stackPit.Lookup(msg.Identifier()); !found {
+			c.connector.Write(wireFormat)
+		} else {
+			c.stackPit.Insert(msg.Identifier(), msg) // this should aggregate
+		}
 	}
 }
 
@@ -99,38 +99,38 @@ func (c CodecComponent) ProcessIngressMessages() {
 			packetLength := readWord(msgBytes[2:4])
 			headerLength := msgBytes[7]
 
-            // Ensure the packet length is correct
-            if len(msgBytes) != int(packetLength) {
-                log.Printf("Packet length mismatch. Expected %d, got %d. Dropping. %s", int(packetLength), len(msgBytes))
-                continue
-            }
+			// Ensure the packet length is correct
+			if len(msgBytes) != int(packetLength) {
+				log.Printf("Packet length mismatch. Expected %d, got %d. Dropping. %s", int(packetLength), len(msgBytes))
+				continue
+			}
 
 			// Decode the message (skipping past the packet header)
 			decodedTlV := decoder.Decode(msgBytes[headerLength:])
 			message, err := messages.CreateFromTLV(decodedTlV)
-            if err == nil {
-                identity := message.Identifier()
+			if err == nil {
+				identity := message.Identifier()
 
-    			// If the response is cached, just serve it
-                match, isPresent := c.stackCache.Lookup(identity) // XXX: not necessary for responses
-    			if isPresent && message.GetPacketType() == codec.T_INTEREST {
-    				c.connector.Write(match)
-                    continue
-                }
+				// If the response is cached, just serve it
+				match, isPresent := c.stackCache.Lookup(identity) // XXX: not necessary for responses
+				if isPresent && message.GetPacketType() == codec.T_INTEREST {
+					c.connector.Write(match)
+					continue
+				}
 
-                // If the response is not cached, but it's in the PIT, drop it
-                _, inPit := c.stackPit.Lookup(identity)
-                if inPit && message.GetPacketType() == codec.T_INTEREST {
-                    log.Println("Supressing duplicate PIT entry", msgBytes)
-                    continue
-                }
+				// If the response is not cached, but it's in the PIT, drop it
+				_, inPit := c.stackPit.Lookup(identity)
+				if inPit && message.GetPacketType() == codec.T_INTEREST {
+					log.Println("Supressing duplicate PIT entry", msgBytes)
+					continue
+				}
 
-                // Otherwise, forward it up and insert it into the PIT
-                c.stackPit.Insert(message.Identifier(), message)
-                c.ingress <- message
-            } else {
-                log.Println("Failed to decode the message", err)
-            }
+				// Otherwise, forward it up and insert it into the PIT
+				c.stackPit.Insert(message.Identifier(), message)
+				c.ingress <- message
+			} else {
+				log.Println("Failed to decode the message", err)
+			}
 		}
 	}
 }

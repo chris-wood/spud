@@ -20,23 +20,23 @@ func (tree *KeyTree) AddChild(child *KeyTree) {
 	tree.Children = append(tree.Children, child)
 }
 
-func (tree *KeyTree) getKeyPathsWithAccumulator(acc KeyPath) (KeyPath) {
-    // paths := make([][]KeyPath, 0)
-    // XXX: TODO
-    return acc
+func (tree *KeyTree) getKeyPathsWithAccumulator(acc KeyPath) KeyPath {
+	// paths := make([][]KeyPath, 0)
+	// XXX: TODO
+	return acc
 }
 
-func (tree *KeyTree) GetKeyPaths() ([]KeyPath) {
-    paths := make([]KeyPath, 0)
+func (tree *KeyTree) GetKeyPaths() []KeyPath {
+	paths := make([]KeyPath, 0)
 
-    // rootKeys := make([]KeyPath, 0)
-    // rootKeys = append(rootKeys, tree.Keys)
-    rootKeys := tree.Keys[:]
+	// rootKeys := make([]KeyPath, 0)
+	// rootKeys = append(rootKeys, tree.Keys)
+	rootKeys := tree.Keys[:]
 
-    for _, child := range(tree.Children) {
-        subpath := child.getKeyPathsWithAccumulator(rootKeys[:])
-        paths = append(paths, subpath)
-    }
+	for _, child := range tree.Children {
+		subpath := child.getKeyPathsWithAccumulator(rootKeys[:])
+		paths = append(paths, subpath)
+	}
 
-    return paths
+	return paths
 }

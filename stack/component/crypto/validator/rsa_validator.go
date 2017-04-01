@@ -1,18 +1,18 @@
 package validator
 
 import (
-	"github.com/chris-wood/spud/messages"
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"fmt"
 	"github.com/chris-wood/spud/codec"
+	"github.com/chris-wood/spud/messages"
 	"github.com/chris-wood/spud/messages/validation"
 	"github.com/chris-wood/spud/messages/validation/publickey"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/sha256"
-	"crypto/rand"
-	"crypto"
-	"log"
-	"fmt"
 	"hash"
+	"log"
 )
 
 type RSAProcessor struct {

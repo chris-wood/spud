@@ -7,34 +7,34 @@ import "github.com/chris-wood/spud/messages/link"
 import "github.com/chris-wood/spud/messages/validation/publickey"
 
 type ValidationAlgorithm struct {
-    validationAlgorithmType uint16
+	validationAlgorithmType uint16
 
-    // Validation dependent data -- empty until otherwise instantiated
-    publicKey publickey.PublicKey
-    keyId hash.Hash
-    signatureTime uint64
+	// Validation dependent data -- empty until otherwise instantiated
+	publicKey     publickey.PublicKey
+	keyId         hash.Hash
+	signatureTime uint64
 
-    // XXX: write TLV wrappers for these fields
-    certificate []byte
-    keyName link.Link
+	// XXX: write TLV wrappers for these fields
+	certificate []byte
+	keyName     link.Link
 }
 
 type validationAlgorithmError struct {
-    problem string
+	problem string
 }
 
 func (e validationAlgorithmError) Error() string {
-    return fmt.Sprintf("%s", e.problem)
+	return fmt.Sprintf("%s", e.problem)
 }
 
 // Constructor functions
 
 func NewValidationAlgorithmFromPublickey(vaType uint16, publicKey publickey.PublicKey, signatureTime uint64) ValidationAlgorithm {
-    return ValidationAlgorithm{validationAlgorithmType: vaType, publicKey: publicKey, signatureTime: signatureTime}
+	return ValidationAlgorithm{validationAlgorithmType: vaType, publicKey: publicKey, signatureTime: signatureTime}
 }
 
 func NewValidationAlgorithmFromKeyId(vaType uint16, keyId hash.Hash, signatureTime uint64) ValidationAlgorithm {
-    return ValidationAlgorithm{validationAlgorithmType: vaType, keyId: keyId, signatureTime: signatureTime}
+	return ValidationAlgorithm{validationAlgorithmType: vaType, keyId: keyId, signatureTime: signatureTime}
 }
 
 // func NewValidationAlgorithmFromLink(vaType uint16, keyName link.Link, signatureTime uint64) ValidationAlgorithm {
@@ -46,104 +46,104 @@ func NewValidationAlgorithmFromKeyId(vaType uint16, keyId hash.Hash, signatureTi
 // }
 
 func createFromInnerTLV(validationType uint16, tlv codec.TLV) (ValidationAlgorithm, error) {
-    var result ValidationAlgorithm
-    var err error
+	var result ValidationAlgorithm
+	var err error
 
-    var publicKey publickey.PublicKey
+	var publicKey publickey.PublicKey
 
-    for _, child := range(tlv.Children()) {
-        if child.Type() == codec.T_PUBLICKEY {
-            publicKey, err = publickey.CreateFromTLV(child)
-            if err != nil {
-                return result, err
-            }
-        } else {
-            fmt.Printf("Invalid TLV type %d\n", child.Type())
-        }
-    }
+	for _, child := range tlv.Children() {
+		if child.Type() == codec.T_PUBLICKEY {
+			publicKey, err = publickey.CreateFromTLV(child)
+			if err != nil {
+				return result, err
+			}
+		} else {
+			fmt.Printf("Invalid TLV type %d\n", child.Type())
+		}
+	}
 
-    return ValidationAlgorithm{validationAlgorithmType: validationType, publicKey: publicKey}, nil
+	return ValidationAlgorithm{validationAlgorithmType: validationType, publicKey: publicKey}, nil
 }
 
 func CreateFromTLV(tlv codec.TLV) (ValidationAlgorithm, error) {
-    var result ValidationAlgorithm
+	var result ValidationAlgorithm
 
-    // There must be one child
-    if len(tlv.Children()) != 1 {
-        return result, nil
-    }
+	// There must be one child
+	if len(tlv.Children()) != 1 {
+		return result, nil
+	}
 
-    containerTlv := tlv.Children()[0]
-    return createFromInnerTLV(containerTlv.Type(), containerTlv)
+	containerTlv := tlv.Children()[0]
+	return createFromInnerTLV(containerTlv.Type(), containerTlv)
 }
 
 // ValidationAlgorithm functions
 
 func (va ValidationAlgorithm) GetValidationSuite() uint16 {
-    return va.validationAlgorithmType
+	return va.validationAlgorithmType
 }
 
 func (va ValidationAlgorithm) GetPublicKey() publickey.PublicKey {
-    return va.publicKey
+	return va.publicKey
 }
 
 func (va ValidationAlgorithm) GetKeyLink() link.Link {
-    return va.keyName
+	return va.keyName
 }
 
 func (va ValidationAlgorithm) KeyIdString() string {
-    if va.publicKey.Length() > 0 {
-        return va.publicKey.KeyIdString()
-    }
+	if va.publicKey.Length() > 0 {
+		return va.publicKey.KeyIdString()
+	}
 
-    // XXX: handle the other cases here
+	// XXX: handle the other cases here
 
-    return ""
+	return ""
 }
 
 // TLV interface functions
 
 func (va ValidationAlgorithm) Type() uint16 {
-    return codec.T_VALALG
+	return codec.T_VALALG
 }
 
 func (va ValidationAlgorithm) TypeString() string {
-    return "ValidationAlgorithm"
+	return "ValidationAlgorithm"
 }
 
 func (va ValidationAlgorithm) Length() uint16 {
-    length := uint16(4) // 2+2 for the TL container
+	length := uint16(4) // 2+2 for the TL container
 
-    if va.publicKey.Length() > 0  {
-        length += va.publicKey.Length() + 4
-    }
+	if va.publicKey.Length() > 0 {
+		length += va.publicKey.Length() + 4
+	}
 
-    // XXX: add the remaining values here
+	// XXX: add the remaining values here
 
-    return length
+	return length
 }
 
 func (va ValidationAlgorithm) Value() []byte {
-    e := codec.Encoder{}
+	e := codec.Encoder{}
 
-    value := make([]byte, 0)
-    if va.publicKey.Length() > 0  {
-        value = append(value, e.EncodeTLV(va.publicKey)...)
-    }
+	value := make([]byte, 0)
+	if va.publicKey.Length() > 0 {
+		value = append(value, e.EncodeTLV(va.publicKey)...)
+	}
 
-    // XXX: add the remaining VDD values here
+	// XXX: add the remaining VDD values here
 
-    container := e.EncodeContainer(va.validationAlgorithmType, uint16(len(value)))
-    container = append(container, value...)
+	container := e.EncodeContainer(va.validationAlgorithmType, uint16(len(value)))
+	container = append(container, value...)
 
-    return container
+	return container
 }
 
-func (va ValidationAlgorithm) Children() []codec.TLV  {
-    children := []codec.TLV{va.publicKey}
-    return children
+func (va ValidationAlgorithm) Children() []codec.TLV {
+	children := []codec.TLV{va.publicKey}
+	return children
 }
 
-func (va ValidationAlgorithm) String() string  {
-    return va.TypeString()
+func (va ValidationAlgorithm) String() string {
+	return va.TypeString()
 }

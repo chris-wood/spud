@@ -17,29 +17,29 @@ const KeyEncryptionAlgorithm_RSA_2048_OAEP uint16 = 2
 const KeyEncryptionAlgorithm_RSA_4096_OAEP uint16 = 3
 
 type Key interface {
-	Purpose()   uint8
-	KeyType()   uint8
+	Purpose() uint8
+	KeyType() uint8
 	Algorithm() uint16
 
 	Value() []byte
 }
 
 type SymmetricKey struct {
-    bytes []byte
+	bytes []byte
 }
 
 func (k SymmetricKey) Purpose() uint8 {
-    return uint8(0)
+	return uint8(0)
 }
 
 func (k SymmetricKey) KeyType() uint8 {
-    return KeyTypeOpaque
+	return KeyTypeOpaque
 }
 
 func (k SymmetricKey) Algorithm() uint16 {
-    return uint16(0)
+	return uint16(0)
 }
 
 func (k SymmetricKey) Value() []byte {
-    return k.bytes
+	return k.bytes
 }

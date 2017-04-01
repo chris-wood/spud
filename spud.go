@@ -11,31 +11,31 @@ var count = 0
 var done chan int
 
 func displayResponse(response []byte) {
-    fmt.Println("Response: " + string(response))
-    count = 1
+	fmt.Println("Response: " + string(response))
+	count = 1
 }
 
 func generateResponse(name string, response []byte) []byte {
-    fmt.Println("here's the response")
-    return []byte("hello, spud!")
+	fmt.Println("here's the response")
+	return []byte("hello, spud!")
 }
 
 func testStack() {
-    myStack, err := spud.CreateRaw(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
-    if err != nil {
-        panic("Could not create the stack")
-    }
+	myStack, err := spud.CreateRaw(`{"connector": "athena", "link": "loopback", "fwd-address": "127.0.0.1:9696", "keys": ["key.p12"]}`)
+	if err != nil {
+		panic("Could not create the stack")
+	}
 
-    p := portal.NewPortal(myStack)
-    api := adapter.NewKVSAPI(p)
+	p := portal.NewPortal(myStack)
+	api := adapter.NewKVSAPI(p)
 
-    api.Serve("ccnx:/hello/spud", generateResponse)
-    data, err := api.Get("ccnx:/hello/spud", time.Second)
-    if err != nil {
-        fmt.Println(err)
-    } else {
-        fmt.Println(string(data))
-    }
+	api.Serve("ccnx:/hello/spud", generateResponse)
+	data, err := api.Get("ccnx:/hello/spud", time.Second)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(string(data))
+	}
 }
 
 // func testSession() {
@@ -54,6 +54,6 @@ func testStack() {
 // }
 
 func main() {
-    testStack()
-    // testSession()
+	testStack()
+	// testSession()
 }

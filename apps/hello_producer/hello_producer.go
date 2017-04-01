@@ -7,22 +7,22 @@ import "github.com/chris-wood/spud/stack/api/kvs"
 import "github.com/chris-wood/spud/stack/api/portal"
 
 func generateResponse(prefix string, payload []byte) []byte {
-    fmt.Println("GENERATING A RESPONSE")
-    return []byte("Hello, world!")
+	fmt.Println("GENERATING A RESPONSE")
+	return []byte("Hello, world!")
 }
 
 func serve(prefix string) {
-    myStack, _ := spud.CreateRaw(`{"connector": "athena", "link": "tcp", "fwdaddress": "127.0.0.1:9696", "keys": ["key.p12"]}`)
-    ccnPortal := portal.NewSecurePortal(myStack)
-    api := adapter.NewKVSAPI(ccnPortal)
+	myStack, _ := spud.CreateRaw(`{"connector": "athena", "link": "tcp", "fwdaddress": "127.0.0.1:9696", "keys": ["key.p12"]}`)
+	ccnPortal := portal.NewSecurePortal(myStack)
+	api := adapter.NewKVSAPI(ccnPortal)
 
-    done := make(chan int)
+	done := make(chan int)
 
-    api.Serve(prefix, generateResponse)
+	api.Serve(prefix, generateResponse)
 
-    <-done
+	<-done
 }
 
 func main() {
-    serve("/hello")
+	serve("/hello")
 }

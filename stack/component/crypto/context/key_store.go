@@ -26,24 +26,24 @@ func NewKeyStore() *KeyStore {
 }
 
 func (ke *KeyStore) AddKey(nameSchema name.Name, theKey Key) {
-    segments := nameSchema.SegmentStrings()
-    if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
-        tree := keyTreeBlob.(*KeyTree)
-        tree.AddKey(theKey)
-    } else {
-        tree := CreateKeyTree(nameSchema)
-        tree.AddKey(theKey)
-        ke.keyTree.Insert(segments, tree)
-    }
+	segments := nameSchema.SegmentStrings()
+	if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
+		tree := keyTreeBlob.(*KeyTree)
+		tree.AddKey(theKey)
+	} else {
+		tree := CreateKeyTree(nameSchema)
+		tree.AddKey(theKey)
+		ke.keyTree.Insert(segments, tree)
+	}
 }
 
 func (ke *KeyStore) GetKeys(nameSchema name.Name) ([]KeyPath, error) {
-    segments := nameSchema.SegmentStrings()
-    if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
-        keyTree := keyTreeBlob.(*KeyTree)
-        paths := keyTree.GetKeyPaths()
-        return paths, nil
-    } else {
-        return []KeyPath{}, keyStoreError{"Key for name not found"}
-    }
+	segments := nameSchema.SegmentStrings()
+	if keyTreeBlob, ok := ke.keyTree.Lookup(segments); ok {
+		keyTree := keyTreeBlob.(*KeyTree)
+		paths := keyTree.GetKeyPaths()
+		return paths, nil
+	} else {
+		return []KeyPath{}, keyStoreError{"Key for name not found"}
+	}
 }

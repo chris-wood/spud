@@ -23,7 +23,7 @@ type CryptoComponent struct {
 	pendingVerificationQueue map[string]*messages.MessageWrapper
 
 	// The context will be modified
-	trustStore     *context.TrustStore
+	trustStore *context.TrustStore
 	downstream component.Component
 
 	// XXX: LPM table of processors
@@ -81,7 +81,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
 		}
 		c.downstream.Enqueue(msg)
 
-    	// Save a reocrd for all egress requests
+		// Save a reocrd for all egress requests
 		if msg.GetPacketType() == codec.T_INTEREST {
 			c.pendingMap[msg.Identifier()] = msg
 		}
@@ -156,7 +156,7 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 			if c.cryptoProcessor.Verify(request, msg) {
 				c.checkTrustProperties(msg)
 			} else {
-                log.Println("Dropping the response")
+				log.Println("Dropping the response")
 				c.dropPendingResponses(msg)
 			}
 		}

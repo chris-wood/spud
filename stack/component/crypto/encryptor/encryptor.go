@@ -51,19 +51,19 @@ func (p processorError) Error() string {
 // }
 
 func (p RSAEncryptor) Encrypt(payload []byte) ([]byte, error) {
-    label := []byte("")
-    hash := sha256.New()
+	label := []byte("")
+	hash := sha256.New()
 
-    ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, payload, label)
+	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, payload, label)
 
-    return ciphertext, err
+	return ciphertext, err
 }
 
 func (p RSAEncryptor) Decrypt(identifier string, ciphertext []byte) bool {
-    label := []byte("")
-    hash := sha256.New()
+	label := []byte("")
+	hash := sha256.New()
 
-    plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, ciphertext, label)
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, ciphertext, label)
 
-    return plaintext, err
+	return plaintext, err
 }

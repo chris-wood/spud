@@ -53,9 +53,9 @@ func (p PlainPortal) GetAsyncWithTimeout(request *messages.MessageWrapper, timeo
 }
 
 func (n PlainPortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
-    if prefix == nil {
-        return
-    }
+	if prefix == nil {
+		return
+	}
 	n.apiStack.Service(prefix, func(msg *messages.MessageWrapper) {
 		response := callback(msg)
 		n.apiStack.Enqueue(response)
@@ -63,5 +63,5 @@ func (n PlainPortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
 }
 
 func (p PlainPortal) Produce(data *messages.MessageWrapper) {
-    p.apiStack.Enqueue(data)
+	p.apiStack.Enqueue(data)
 }

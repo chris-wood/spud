@@ -7,55 +7,55 @@ import "crypto/sha256"
 import "fmt"
 
 type PublicKey struct {
-    bytes []byte
+	bytes []byte
 }
 
 type keyError struct {
-    prob string
+	prob string
 }
 
 func (e keyError) Error() string {
-    return fmt.Sprintf("%s", e.prob)
+	return fmt.Sprintf("%s", e.prob)
 }
 
 // Constructors
 
 func Create(bytes []byte) PublicKey {
-    return PublicKey{bytes: bytes}
+	return PublicKey{bytes: bytes}
 }
 
 func CreateFromTLV(tlv codec.TLV) (PublicKey, error) {
-    return PublicKey{bytes: tlv.Value()}, nil
+	return PublicKey{bytes: tlv.Value()}, nil
 }
 
 // TLV functions
 
 func (pk PublicKey) Type() uint16 {
-    return codec.T_PUBLICKEY
+	return codec.T_PUBLICKEY
 }
 
 func (pk PublicKey) TypeString() string {
-    return "PublicKey"
+	return "PublicKey"
 }
 
 func (pk PublicKey) Length() uint16 {
-    return uint16(len(pk.bytes))
+	return uint16(len(pk.bytes))
 }
 
-func (pk PublicKey) Value() []byte  {
-    return pk.bytes
+func (pk PublicKey) Value() []byte {
+	return pk.bytes
 }
 
 func (pk PublicKey) Children() []codec.TLV {
-    return nil
+	return nil
 }
 
 func (pk PublicKey) String() string {
-    return string(pk.bytes)
+	return string(pk.bytes)
 }
 
 func (pk PublicKey) KeyIdString() string {
-    hasher := sha256.New()
-    hasher.Write(pk.Value())
-    return string(hasher.Sum(nil))
+	hasher := sha256.New()
+	hasher.Write(pk.Value())
+	return string(hasher.Sum(nil))
 }

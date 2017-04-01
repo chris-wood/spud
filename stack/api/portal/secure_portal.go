@@ -20,8 +20,8 @@ const connectString string = "CONNECT"
 
 type SecurePortal struct {
 	apiStack stack.Stack
-    	macKey []byte
-    	encKey []byte
+	macKey   []byte
+	encKey   []byte
 }
 
 func NewSecurePortal(s stack.Stack) SecurePortal {
@@ -81,8 +81,8 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	copy(privateKey[:], hello.GetPrivateKeyShare())
 	box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-    session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
-    n.apiStack.AddSession(session, prefix)
+	session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
+	n.apiStack.AddSession(session, prefix)
 
 	log.Println("Consumer key: ", sharedKey)
 }
@@ -122,82 +122,81 @@ func (p SecurePortal) GetAsyncWithTimeout(request *messages.MessageWrapper, time
 	}
 }
 
-
 func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
-    if prefix == nil {
-        return
-    }
+	if prefix == nil {
+		return
+	}
 
-    established := false
-    for {
-        requestWrapper := n.apiStack.Dequeue()
+	established := false
+	for {
+		requestWrapper := n.apiStack.Dequeue()
 
-        if established {
-            log.Println("Handling a request")
-            response := callback(requestWrapper)
-    		n.apiStack.Enqueue(response)
-        } else {
-            request := requestWrapper.InnerMessage()
-    		if !prefix.IsPrefix(request.Name()) {
-    			break
-    		}
+		if established {
+			log.Println("Handling a request")
+			response := callback(requestWrapper)
+			n.apiStack.Enqueue(response)
+		} else {
+			request := requestWrapper.InnerMessage()
+			if !prefix.IsPrefix(request.Name()) {
+				break
+			}
 
-    		kexTLV, _ := request.GetContainer(codec.T_KEX)
-    		kexContainer := kexTLV.(*kex.KEX)
+			kexTLV, _ := request.GetContainer(codec.T_KEX)
+			kexContainer := kexTLV.(*kex.KEX)
 
-    		switch kexContainer.GetMessageType() {
-    		case codec.T_KEX_BAREHELLO:
-    			log.Println("Got the BARE HELLO")
-    			reject := kex.KEXHelloReject(kexContainer, n.macKey)
-    			rejectResponse := content.CreateWithName(request.Name())
-    			rejectResponse.AddContainer(reject)
-    			n.apiStack.Enqueue(messages.Package(rejectResponse))
-    			break
+			switch kexContainer.GetMessageType() {
+			case codec.T_KEX_BAREHELLO:
+				log.Println("Got the BARE HELLO")
+				reject := kex.KEXHelloReject(kexContainer, n.macKey)
+				rejectResponse := content.CreateWithName(request.Name())
+				rejectResponse.AddContainer(reject)
+				n.apiStack.Enqueue(messages.Package(rejectResponse))
+				break
 
-    		case codec.T_KEX_HELLO:
-    			log.Println("Got the HELLO")
-    			accept, err := kex.KEXHelloAccept(kexContainer, n.macKey, n.encKey)
-    			if err != nil {
-    				log.Println(err)
-    				break
-    			}
+			case codec.T_KEX_HELLO:
+				log.Println("Got the HELLO")
+				accept, err := kex.KEXHelloAccept(kexContainer, n.macKey, n.encKey)
+				if err != nil {
+					log.Println(err)
+					break
+				}
 
-    			acceptResponse := content.CreateWithName(request.Name())
-    			acceptResponse.AddContainer(accept)
-    			n.apiStack.Enqueue(messages.Package(acceptResponse))
+				acceptResponse := content.CreateWithName(request.Name())
+				acceptResponse.AddContainer(accept)
+				n.apiStack.Enqueue(messages.Package(acceptResponse))
 
-    			// XXX: go to the KDF step
+				// XXX: go to the KDF step
 
-    			var sharedKey [32]byte
-    			var peerPublic [32]byte
-    			var privateKey [32]byte
-    			copy(peerPublic[:], kexContainer.GetPublicKeyShare())
-    			copy(privateKey[:], accept.GetPrivateKeyShare())
-    			box.Precompute(&sharedKey, &peerPublic, &privateKey)
+				var sharedKey [32]byte
+				var peerPublic [32]byte
+				var privateKey [32]byte
+				copy(peerPublic[:], kexContainer.GetPublicKeyShare())
+				copy(privateKey[:], accept.GetPrivateKeyShare())
+				box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-    			log.Println("Producer key:", sharedKey)
+				log.Println("Producer key:", sharedKey)
 
-    			// Create and start the session
-    			// session := esic.NewESIC(n.apiStack, sharedKey[:], accept.GetSessionID())
-    			// callback(session)
-                time.Sleep(100 * time.Millisecond)
+				// Create and start the session
+				// session := esic.NewESIC(n.apiStack, sharedKey[:], accept.GetSessionID())
+				// callback(session)
+				time.Sleep(100 * time.Millisecond)
 
-                session := tunnel.NewSession(sharedKey[:], accept.GetSessionID())
-                n.apiStack.AddSession(session, prefix)
-                established = true
+				session := tunnel.NewSession(sharedKey[:], accept.GetSessionID())
+				n.apiStack.AddSession(session, prefix)
+				established = true
 
-    			break
+				break
 
-    		case codec.T_KEX_REJECT:
-    		case codec.T_KEX_ACCEPT:
-    			log.Println("Got an invalid message...")
-    			// invalid message type to be received here...
-    			break
-    		}
-        }
+			case codec.T_KEX_REJECT:
+			case codec.T_KEX_ACCEPT:
+				log.Println("Got an invalid message...")
+				// invalid message type to be received here...
+				break
+			}
+		}
 	}
 }
 
 func (p SecurePortal) Produce(data *messages.MessageWrapper) {
-    p.apiStack.Enqueue(data)
+	p.apiStack.Enqueue(data)
 }

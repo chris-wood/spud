@@ -25,12 +25,12 @@ import "github.com/chris-wood/spud/stack/component/crypto/validator"
 import "github.com/chris-wood/spud/stack/component/crypto/context"
 
 type SpudStack struct {
-	cryptoComponent component.Component
-	codecComponent  component.Component
-    transportComponent  component.Component
-    tunnelComponent *tunnel.TunnelComponent
-	head            component.Component
-	bottom          component.Component
+	cryptoComponent    component.Component
+	codecComponent     component.Component
+	transportComponent component.Component
+	tunnelComponent    *tunnel.TunnelComponent
+	head               component.Component
+	bottom             component.Component
 
 	pendingMap   map[string]stack.MessageCallback
 	pendingQueue chan *messages.MessageWrapper
@@ -65,9 +65,9 @@ func (s *SpudStack) Get(msg *messages.MessageWrapper, callback stack.MessageCall
 }
 
 func (s *SpudStack) Service(prefix *name.Name, callback stack.MessageCallback) {
-    if prefix == nil {
-        return // XXX: return an error
-    }
+	if prefix == nil {
+		return // XXX: return an error
+	}
 	nameComponents := prefix.SegmentStrings()
 	s.prefixTable.Insert(nameComponents, callback)
 }
@@ -110,7 +110,7 @@ func (s *SpudStack) processInputQueue() {
 }
 
 func (s *SpudStack) AddSession(session *tunnel.Session, baseName *name.Name) {
-    s.tunnelComponent.AddSession(session, baseName)
+	s.tunnelComponent.AddSession(session, baseName)
 }
 
 func Create(config config.StackConfig) (*SpudStack, error) {
@@ -144,11 +144,11 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 	// Create codec
 	codecComponent := codec.NewCodecComponent(fc, stackCache, stackPit)
 
-    // Create the tunnel component
-    tunnelComponent := tunnel.NewTunnelComponent(codecComponent)
+	// Create the tunnel component
+	tunnelComponent := tunnel.NewTunnelComponent(codecComponent)
 
-    // Create the transport component
-    transportComponent := transport.NewTransportComponent(tunnelComponent)
+	// Create the transport component
+	transportComponent := transport.NewTransportComponent(tunnelComponent)
 
 	// Create crypto component
 	// XXX: delegate validator and encryptor creation to the crypto component
@@ -175,22 +175,22 @@ func Create(config config.StackConfig) (*SpudStack, error) {
 
 	// Assemble the stack
 	stack := &SpudStack{
-		cryptoComponent: cryptoComponent,
-		codecComponent:  codecComponent,
-        transportComponent: transportComponent,
-        tunnelComponent: tunnelComponent,
-		head:            cryptoComponent,
-		pendingQueue:    make(chan *messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
-		pendingMap:      make(map[string]stack.MessageCallback),
-		prefixTable:     &lpm.StandardLPM{},
+		cryptoComponent:    cryptoComponent,
+		codecComponent:     codecComponent,
+		transportComponent: transportComponent,
+		tunnelComponent:    tunnelComponent,
+		head:               cryptoComponent,
+		pendingQueue:       make(chan *messages.MessageWrapper, config.PendingBufferSize), // random constant -- make this configurable
+		pendingMap:         make(map[string]stack.MessageCallback),
+		prefixTable:        &lpm.StandardLPM{},
 	}
 
 	// Start the stack processing loop -- the order here matters
 	go codecComponent.ProcessEgressMessages()
 	go codecComponent.ProcessIngressMessages()
-    	go tunnelComponent.ProcessEgressMessages()
+	go tunnelComponent.ProcessEgressMessages()
 	go tunnelComponent.ProcessIngressMessages()
-    	go transportComponent.ProcessEgressMessages()
+	go transportComponent.ProcessEgressMessages()
 	go transportComponent.ProcessIngressMessages()
 	go cryptoComponent.ProcessEgressMessages()
 	go cryptoComponent.ProcessIngressMessages()

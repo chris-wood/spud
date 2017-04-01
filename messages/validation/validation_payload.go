@@ -4,47 +4,47 @@ import "fmt"
 import "github.com/chris-wood/spud/codec"
 
 type ValidationPayload struct {
-    bytes []byte
+	bytes []byte
 }
 
 type validationPayloadError struct {
-    problem string
+	problem string
 }
 
 func (e validationPayloadError) Error() string {
-    return fmt.Sprintf("%s", e.problem)
+	return fmt.Sprintf("%s", e.problem)
 }
 
 // Constructor functions
 
 func NewValidationPayload(bytes []byte) ValidationPayload {
-    return ValidationPayload{bytes}
+	return ValidationPayload{bytes}
 }
 
 // TLV interface functions
 
 func (vp ValidationPayload) Type() uint16 {
-    return codec.T_VALPAYLOAD
+	return codec.T_VALPAYLOAD
 }
 
 func (vp ValidationPayload) TypeString() string {
-    return "ValidationPayload"
+	return "ValidationPayload"
 }
 
 func (vp ValidationPayload) Length() uint16 {
-    return uint16(len(vp.bytes))
+	return uint16(len(vp.bytes))
 }
 
 func (vp ValidationPayload) Value() []byte {
-    return vp.bytes
+	return vp.bytes
 }
 
 func (vp ValidationPayload) Children() []codec.TLV {
-    return nil
+	return nil
 }
 
 // String functions
 
 func (vp ValidationPayload) String() string {
-    return ""
+	return ""
 }
