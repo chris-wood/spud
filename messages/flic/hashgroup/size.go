@@ -9,6 +9,10 @@ type Size struct {
 	size     uint64
 }
 
+func CreateSize(sizeType uint16, size uint64) Size {
+	return Size{sizeType: sizeType, size:size}
+}
+
 func (s Size) Type() uint16 {
 	return s.sizeType
 }

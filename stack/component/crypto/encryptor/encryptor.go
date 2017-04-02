@@ -5,9 +5,9 @@ package encryptor
 // import "github.com/chris-wood/spud/messages/validation"
 // import "github.com/chris-wood/spud/messages/validation/publickey"
 
-import "crypto/rand"
-import "crypto/rsa"
-import "crypto/sha256"
+//import "crypto/rand"
+//import "crypto/rsa"
+//import "crypto/sha256"
 
 // import "crypto/x509"
 // import "crypto"
@@ -51,19 +51,21 @@ func (p processorError) Error() string {
 // }
 
 func (p RSAEncryptor) Encrypt(payload []byte) ([]byte, error) {
-	label := []byte("")
-	hash := sha256.New()
-
-	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, payload, label)
-
-	return ciphertext, err
+	//label := []byte("")
+	//hash := sha256.New()
+	//
+	//ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, payload, label)
+	//
+	//return ciphertext, err
+	return nil, nil
 }
 
 func (p RSAEncryptor) Decrypt(identifier string, ciphertext []byte) bool {
-	label := []byte("")
-	hash := sha256.New()
-
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, ciphertext, label)
-
-	return plaintext, err
+	//label := []byte("")
+	//hash := sha256.New()
+	//
+	//plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, ciphertext, label)
+	//
+	//return plaintext, err
+	return false
 }

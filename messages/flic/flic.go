@@ -42,7 +42,11 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*FLIC, error) {
 			}
 		} else if tlv.Type() == codec.T_HASHGROUP {
 			hashGroup, err := hashgroup.CreateFromTLV(tlv)
-			containers = append(containers)
+			if err == nil {
+				containers = append(containers, hashGroup)
+			} else {
+				fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
+			}
 		} else {
 			fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
 		}

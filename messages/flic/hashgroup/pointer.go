@@ -11,6 +11,10 @@ type SizedDataPointer struct {
 	ptrHash hash.Hash
 }
 
+func CreateSizedDataPointer(size Size, ptrhash hash.Hash) *SizedDataPointer {
+	return &SizedDataPointer{size: size, ptrHash:ptrhash}
+}
+
 func (p SizedDataPointer) GetPointerType() uint16 {
 	return hashGroupDataPointerType
 }
@@ -57,6 +61,10 @@ func (p SizedDataPointer) String() string {
 type SizedManifestPointer struct {
 	size    Size
 	ptrHash hash.Hash
+}
+
+func CreateSizedManifestPointer(size Size, ptrhash hash.Hash) *SizedManifestPointer {
+	return &SizedManifestPointer{size: size, ptrHash:ptrhash}
 }
 
 func (p SizedManifestPointer) GetPointerType() uint16 {

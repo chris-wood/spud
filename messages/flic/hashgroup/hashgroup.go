@@ -1,9 +1,8 @@
 package hashgroup
 
-import "github.com/chris-wood/spud/messages/name"
-import "github.com/chris-wood/spud/messages/hash"
 import (
-	"fmt"
+	"github.com/chris-wood/spud/messages/name"
+	"github.com/chris-wood/spud/messages/hash"
 	"github.com/chris-wood/spud/codec"
 )
 
