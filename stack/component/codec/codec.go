@@ -135,11 +135,11 @@ func (c CodecComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c CodecComponent) Enqueue(msg *messages.MessageWrapper) {
+func (c CodecComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c CodecComponent) Dequeue() *messages.MessageWrapper {
+func (c CodecComponent) Pop() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }

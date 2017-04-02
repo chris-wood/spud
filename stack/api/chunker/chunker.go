@@ -39,6 +39,6 @@ func (n *ChunkerAPI) Serve(nameString string, callback RequestCallback) {
 	// data := callback(msg.Identifier(), encapPayload)
 	// dataPayload := payload.Create(data)
 	// response := content.CreateWithNameAndPayload(msg.Name(), dataPayload)
-	// n.apiStack.Enqueue(response)
+	// n.apiStack.Push(response)
 	// })
 }

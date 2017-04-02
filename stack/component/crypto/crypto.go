@@ -79,7 +79,7 @@ func (c CryptoComponent) ProcessEgressMessages() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		c.downstream.Enqueue(msg)
+		c.downstream.Push(msg)
 
 		// Save a reocrd for all egress requests
 		if msg.GetPacketType() == codec.T_INTEREST {
@@ -147,7 +147,7 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 			keyMsg := interest.CreateFromLink(link)
 			keyPacket := messages.Package(keyMsg)
 
-			c.downstream.Enqueue(keyPacket)
+			c.downstream.Push(keyPacket)
 			c.pendingMap[keyPacket.Identifier()] = keyPacket
 
 			// Save the reference to this response
@@ -168,7 +168,7 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 
 func (c CryptoComponent) ProcessIngressMessages() {
 	for {
-		msg := c.downstream.Dequeue()
+		msg := c.downstream.Pop()
 
 		// Hand off the message to the request/response handler
 		if msg.GetPacketType() != codec.T_INTEREST {
@@ -179,11 +179,11 @@ func (c CryptoComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c CryptoComponent) Enqueue(msg *messages.MessageWrapper) {
+func (c CryptoComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c CryptoComponent) Dequeue() *messages.MessageWrapper {
+func (c CryptoComponent) Pop() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }

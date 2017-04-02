@@ -41,10 +41,10 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	bareHello := kex.KEXHello()
 	bareHelloRequest := interest.CreateWithName(bareHelloName)
 	bareHelloRequest.AddContainer(bareHello)
-	n.apiStack.Enqueue(messages.Package(bareHelloRequest))
+	n.apiStack.Push(messages.Package(bareHelloRequest))
 
 	// Wait for the response, and use it to build the full hello
-	replyWrapper := n.apiStack.Dequeue()
+	replyWrapper := n.apiStack.Pop()
 	reply := replyWrapper.InnerMessage()
 	log.Println("Got the REJECT")
 
@@ -61,10 +61,10 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 
 	helloRequest := interest.CreateWithName(helloName)
 	helloRequest.AddContainer(hello)
-	n.apiStack.Enqueue(messages.Package(helloRequest))
+	n.apiStack.Push(messages.Package(helloRequest))
 
 	// Wait for the response to complete the KEX
-	replyWrapper = n.apiStack.Dequeue()
+	replyWrapper = n.apiStack.Pop()
 	reply = replyWrapper.InnerMessage()
 
 	accept, err := reply.GetContainer(codec.T_KEX)
@@ -129,12 +129,12 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 
 	established := false
 	for {
-		requestWrapper := n.apiStack.Dequeue()
+		requestWrapper := n.apiStack.Pop()
 
 		if established {
 			log.Println("Handling a request")
 			response := callback(requestWrapper)
-			n.apiStack.Enqueue(response)
+			n.apiStack.Push(response)
 		} else {
 			request := requestWrapper.InnerMessage()
 			if !prefix.IsPrefix(request.Name()) {
@@ -150,7 +150,7 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 				reject := kex.KEXHelloReject(kexContainer, n.macKey)
 				rejectResponse := content.CreateWithName(request.Name())
 				rejectResponse.AddContainer(reject)
-				n.apiStack.Enqueue(messages.Package(rejectResponse))
+				n.apiStack.Push(messages.Package(rejectResponse))
 				break
 
 			case codec.T_KEX_HELLO:
@@ -163,7 +163,7 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 
 				acceptResponse := content.CreateWithName(request.Name())
 				acceptResponse.AddContainer(accept)
-				n.apiStack.Enqueue(messages.Package(acceptResponse))
+				n.apiStack.Push(messages.Package(acceptResponse))
 
 				// XXX: go to the KDF step
 
@@ -198,5 +198,5 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 }
 
 func (p SecurePortal) Produce(data *messages.MessageWrapper) {
-	p.apiStack.Enqueue(data)
+	p.apiStack.Push(data)
 }

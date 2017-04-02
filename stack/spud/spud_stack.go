@@ -37,11 +37,11 @@ type SpudStack struct {
 	prefixTable  lpm.LPM
 }
 
-func (s *SpudStack) Enqueue(msg *messages.MessageWrapper) {
-	s.head.Enqueue(msg)
+func (s *SpudStack) Push(msg *messages.MessageWrapper) {
+	s.head.Push(msg)
 }
 
-func (s *SpudStack) Dequeue() *messages.MessageWrapper {
+func (s *SpudStack) Pop() *messages.MessageWrapper {
 	return <-s.pendingQueue
 }
 
@@ -60,8 +60,8 @@ func (s *SpudStack) Get(msg *messages.MessageWrapper, callback stack.MessageCall
 	// Register the callback
 	s.pendingMap[msg.Identifier()] = callback
 
-	// Enqueue the message into the top of the stack
-	s.head.Enqueue(msg)
+	// Push the message into the top of the stack
+	s.head.Push(msg)
 }
 
 func (s *SpudStack) Service(prefix *name.Name, callback stack.MessageCallback) {
@@ -74,8 +74,8 @@ func (s *SpudStack) Service(prefix *name.Name, callback stack.MessageCallback) {
 
 func (s *SpudStack) processInputQueue() {
 	for {
-		// Dequeue messages as they arrive
-		msg := s.head.Dequeue()
+		// Pop messages as they arrive
+		msg := s.head.Pop()
 
 		switch msg.GetPacketType() {
 		case tlvCodec.T_INTEREST:

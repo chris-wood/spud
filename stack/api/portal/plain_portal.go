@@ -58,10 +58,10 @@ func (n PlainPortal) Serve(prefix *name.Name, callback RequestMessageCallback) {
 	}
 	n.apiStack.Service(prefix, func(msg *messages.MessageWrapper) {
 		response := callback(msg)
-		n.apiStack.Enqueue(response)
+		n.apiStack.Push(response)
 	})
 }
 
 func (p PlainPortal) Produce(data *messages.MessageWrapper) {
-	p.apiStack.Enqueue(data)
+	p.apiStack.Push(data)
 }

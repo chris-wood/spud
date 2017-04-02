@@ -61,7 +61,7 @@ func NewTransportComponent(downstream component.Component) *TransportComponent {
 
 func (c *TransportComponent) HandleTimeout(identity string) {
 	// XXX
-	log.Println("crap...")
+	log.Println("XXX: timeout handler not implemented")
 }
 
 func (c *TransportComponent) ProcessEgressMessages() {
@@ -77,13 +77,13 @@ func (c *TransportComponent) ProcessEgressMessages() {
 		}
 
 		// Send the message downstream
-		c.downstream.Enqueue(msg)
+		c.downstream.Push(msg)
 	}
 }
 
 func (c *TransportComponent) ProcessIngressMessages() {
 	for {
-		msg := c.downstream.Dequeue()
+		msg := c.downstream.Pop()
 
 		// Cancel timeout
 		if msg.GetPacketType() != codec.T_INTEREST {
@@ -108,11 +108,11 @@ func (c *TransportComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c TransportComponent) Enqueue(msg *messages.MessageWrapper) {
+func (c TransportComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c TransportComponent) Dequeue() *messages.MessageWrapper {
+func (c TransportComponent) Pop() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }
