@@ -1,18 +1,29 @@
 package codec
 
-import "log"
-
-import "encoding/binary"
-import "github.com/chris-wood/spud/messages"
-import "github.com/chris-wood/spud/codec"
-import "github.com/chris-wood/spud/stack/cache"
-import "github.com/chris-wood/spud/stack/pit"
-import "github.com/chris-wood/spud/stack/component/connector"
+import (
+	"github.com/chris-wood/spud/stack/component/connector"
+	"github.com/chris-wood/spud/messages"
+	"github.com/chris-wood/spud/stack/cache"
+	"github.com/chris-wood/spud/stack/pit"
+	"github.com/chris-wood/spud/codec"
+	"encoding/binary"
+	"fmt"
+	"math"
+	"log"
+)
 
 const PKT_INTEREST uint8 = 0x00
 const PKT_CONTENT uint8 = 0x01
 const DEFAULT_HOP_LIMIT uint8 = 0xFF
 const CODEC_SCHEMA_VERSION uint8 = 0x01
+
+type codecError struct {
+	prob string
+}
+
+func (e codecError) Error() string {
+	return fmt.Sprintf("%s", e.prob)
+}
 
 type CodecComponent struct {
 	ingress chan *messages.MessageWrapper
@@ -34,7 +45,7 @@ func readWord(bytes []byte) uint16 {
 	return (uint16(bytes[0]) << 8) | uint16(bytes[1])
 }
 
-func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) []byte {
+func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) ([]byte, error) {
 	header := make([]byte, 8)
 
 	header[0] = CODEC_SCHEMA_VERSION
@@ -46,17 +57,25 @@ func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) []
 		header[1] = PKT_CONTENT
 	}
 
+	// Check for overflow
+	if (len(packetBytes) + len(optionalHeaderBytes) + 8 > math.MaxUint16) {
+		return nil, codecError{"Packet length exceeded the wire format capacity"}
+	}
+
 	packetLength := uint16(len(packetBytes) + len(optionalHeaderBytes) + 8)
-	// TODO: check for overflow
 	binary.BigEndian.PutUint16(header[2:], packetLength)
 
+	// Check for header length overflow
+	if (len(optionalHeaderBytes) + 8 > math.MaxUint8) {
+		return nil, codecError{"Header length exceeded a single octet"}
+	}
 	headerLength := uint8(len(optionalHeaderBytes) + 8)
-	// TODO: check for overflow
 	header[7] = headerLength
 
 	wireFormat := append(header, optionalHeaderBytes...)
 	wireFormat = append(wireFormat, packetBytes...)
-	return wireFormat
+
+	return wireFormat, nil
 }
 
 func (c CodecComponent) ProcessEgressMessages() {
@@ -72,7 +91,11 @@ func (c CodecComponent) ProcessEgressMessages() {
 
 		// Prepend the fixed header and make the final packet
 		messageType := readWord(messageBytes)
-		wireFormat := buildPacket(messageType, optionalHeader, messageBytes)
+		wireFormat, err := buildPacket(messageType, optionalHeader, messageBytes)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 
 		// If we have a content object, insert it into the cache and forward if a PIT entry awaits
 		// Otherwise, if it's an interest without a PIT entry, forward it
