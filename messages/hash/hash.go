@@ -2,7 +2,10 @@ package hash
 
 import "fmt"
 
-import "github.com/chris-wood/spud/codec"
+import (
+	"github.com/chris-wood/spud/codec"
+	"crypto/subtle"
+)
 
 type HashType uint16
 
@@ -57,4 +60,15 @@ func (h Hash) Children() []codec.TLV {
 
 func (h Hash) String() string {
 	return string(h.digest)
+}
+
+// Utility functions
+
+func (h Hash) Equals(other Hash) bool {
+	if h.hashType == other.hashType {
+		if subtle.ConstantTimeCompare(h.digest, other.digest) == 0 {
+			return true
+		}
+	}
+	return false
 }

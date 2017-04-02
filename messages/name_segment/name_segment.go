@@ -1,7 +1,9 @@
 package name_segment
 
-import "fmt"
-import "github.com/chris-wood/spud/codec"
+import (
+	"fmt"
+	"github.com/chris-wood/spud/codec"
+)
 
 type NameSegment struct {
 	segmentType  uint16
@@ -20,7 +22,7 @@ func (e nameSegmentError) Error() string {
 
 func Parse(segmentString string) (NameSegment, error) {
 	// TODO: the type needs to be derived or inferred
-	return NameSegment{segmentType: 1, SegmentValue: segmentString}, nil
+	return NameSegment{segmentType: codec.T_NAMESEG_NAME, SegmentValue: segmentString}, nil
 }
 
 func New(segmentType uint16, segmentString string) NameSegment {

@@ -91,6 +91,10 @@ func (va ValidationAlgorithm) GetKeyLink() link.Link {
 	return va.keyName
 }
 
+func (va ValidationAlgorithm) GetKeyId() hash.Hash {
+	return va.keyId
+}
+
 func (va ValidationAlgorithm) KeyIdString() string {
 	if va.publicKey.Length() > 0 {
 		return va.publicKey.KeyIdString()

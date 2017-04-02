@@ -32,11 +32,6 @@ const T_NAMESEG_NAME uint16 = 0x0001
 const T_NAMESEG_IPID uint16 = 0x0002
 const T_NAMESEG_CHUNK uint16 = 0x0010
 const T_NAMESEG_VERSION uint16 = 0x0013
-const T_NAMESEG_APP0 uint16 = 0x1000
-const T_NAMESEG_APP1 uint16 = 0x1001
-const T_NAMESEG_APP2 uint16 = 0x1002
-const T_NAMESEG_APP3 uint16 = 0x1003
-const T_NAMESEG_APP4 uint16 = 0x1004
 
 // KEX message types
 const T_KEX_BAREHELLO uint16 = 0x0001

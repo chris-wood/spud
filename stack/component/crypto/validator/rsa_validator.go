@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"fmt"
 	"github.com/chris-wood/spud/codec"
 	"github.com/chris-wood/spud/messages"
 	"github.com/chris-wood/spud/messages/validation"
@@ -18,14 +17,6 @@ import (
 type RSAProcessor struct {
 	privateKey *rsa.PrivateKey
 	publicKey  rsa.PublicKey
-}
-
-type processorError struct {
-	problem string
-}
-
-func (p processorError) Error() string {
-	return fmt.Sprintf("%s", p.problem)
 }
 
 func NewRSAProcessor(keySize int) (RSAProcessor, error) {

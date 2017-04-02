@@ -48,6 +48,7 @@ func readWord(bytes []byte) uint16 {
 func buildPacket(messageType uint16, optionalHeaderBytes, packetBytes []byte) ([]byte, error) {
 	header := make([]byte, 8)
 
+	// Populate the header
 	header[0] = CODEC_SCHEMA_VERSION
 	switch messageType {
 	case codec.T_INTEREST:
@@ -97,9 +98,9 @@ func (c CodecComponent) ProcessEgressMessages() {
 			continue
 		}
 
-		// If we have a content object, insert it into the cache and forward if a PIT entry awaits
-		// Otherwise, if it's an interest without a PIT entry, forward it
-		// Otherwise, it's an interest with a PIT entry, so aggregate
+		// If we have a content object, insert it into the cache and forward if a PIT entry awaits.
+		// Else, if it's an interest without a PIT entry, then forward it.
+		// Else, it's an interest with a PIT entry, so aggregate.
 		if messageType != codec.T_INTEREST {
 			c.stackCache.Insert(msg.Identifier(), wireFormat)
 			if _, found := c.stackPit.Lookup(msg.Identifier()); found {

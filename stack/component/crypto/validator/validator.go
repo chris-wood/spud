@@ -1,8 +1,19 @@
 package validator
 
-import "hash"
-import "github.com/chris-wood/spud/messages"
-import "github.com/chris-wood/spud/messages/validation"
+import (
+	"github.com/chris-wood/spud/messages/validation"
+	"github.com/chris-wood/spud/messages"
+	"fmt"
+	"hash"
+)
+
+type processorError struct {
+	problem string
+}
+
+func (p processorError) Error() string {
+	return fmt.Sprintf("%s", p.problem)
+}
 
 type CryptoProcessor interface {
 	CanVerify(msg *messages.MessageWrapper) bool
