@@ -4,7 +4,7 @@ import "fmt"
 import "time"
 
 import "github.com/chris-wood/spud/stack/spud"
-import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/store"
 import "github.com/chris-wood/spud/stack/api/portal"
 
 var count = 0
@@ -27,10 +27,10 @@ func testStack() {
 	}
 
 	p := portal.NewPortal(myStack)
-	api := adapter.NewKVSAPI(p)
+	storer := store.NewStoreAPI(p)
 
-	api.Serve("ccnx:/hello/spud", generateResponse)
-	data, err := api.Get("ccnx:/hello/spud", time.Second)
+	storer.Serve("ccnx:/hello/spud", generateResponse)
+	data, err := storer.Get("ccnx:/hello/spud", time.Second)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -38,22 +38,6 @@ func testStack() {
 	}
 }
 
-// func testSession() {
-//     myStack, err := spud.CreateRaw(`{"link": "loopback"}`)
-//     if err != nil {
-//         panic("Could not create the stack")
-//     }
-//     done = make(chan int)
-//
-//     prefix, _ := name.Parse("ccnx:/producer")
-//     api.Service(prefix) // ditto below
-//     api.Connect(prefix) // SessionHandler will be invoked if and when the session is successfully completed
-//
-//     // sleep until the consumer gets a response
-//     <- done
-// }
-
 func main() {
 	testStack()
-	// testSession()
 }

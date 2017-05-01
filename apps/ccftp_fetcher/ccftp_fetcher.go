@@ -4,7 +4,7 @@ import "flag"
 import "fmt"
 
 import "github.com/chris-wood/spud/stack/spud"
-import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/store"
 import "github.com/chris-wood/spud/stack/api/portal"
 
 type CCFTPFetcher struct {

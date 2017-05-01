@@ -5,7 +5,7 @@ import "flag"
 import "strings"
 
 import "github.com/chris-wood/spud/stack/spud"
-import "github.com/chris-wood/spud/stack/api/kvs"
+import "github.com/chris-wood/spud/stack/api/store"
 import "github.com/chris-wood/spud/stack/api/portal"
 
 type CCFTPServer struct {

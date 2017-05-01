@@ -1,4 +1,4 @@
-package adapter
+package store
 
 import "fmt"
 import "time"
@@ -10,30 +10,30 @@ import "github.com/chris-wood/spud/messages/payload"
 import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
 
-type KVSAPI struct {
+type StoreAPI struct {
 	p portal.Portal
 }
 
-type KVSAPIError struct {
+type StoreAPIError struct {
 	arg  int
 	prob string
 }
 
-func (e KVSAPIError) Error() string {
+func (e StoreAPIError) Error() string {
 	return fmt.Sprintf("%d - %s", e.arg, e.prob)
 }
 
 type RequestCallback func(string, []byte) []byte
 type ResponseCallback func([]byte)
 
-func NewKVSAPI(thePortal portal.Portal) *KVSAPI {
-	api := &KVSAPI{
+func NewStoreAPI(thePortal portal.Portal) *StoreAPI {
+	api := &StoreAPI{
 		p: thePortal,
 	}
 	return api
 }
 
-func (n *KVSAPI) Get(nameString string, timeout time.Duration) ([]byte, error) {
+func (n *StoreAPI) Get(nameString string, timeout time.Duration) ([]byte, error) {
 	requestName, err := name.Parse(nameString)
 	if err == nil {
 		request := messages.Package(interest.CreateWithName(requestName))
@@ -47,7 +47,7 @@ func (n *KVSAPI) Get(nameString string, timeout time.Duration) ([]byte, error) {
 	return nil, err
 }
 
-func (n *KVSAPI) GetAsync(nameString string, callback ResponseCallback) error {
+func (n *StoreAPI) GetAsync(nameString string, callback ResponseCallback) error {
 	requestName, err := name.Parse(nameString)
 	if err == nil {
 		request := messages.Package(interest.CreateWithName(requestName))
@@ -58,7 +58,7 @@ func (n *KVSAPI) GetAsync(nameString string, callback ResponseCallback) error {
 	return err
 }
 
-func (n *KVSAPI) Serve(nameString string, callback RequestCallback) {
+func (n *StoreAPI) Serve(nameString string, callback RequestCallback) {
 	prefix, err := name.Parse(nameString)
 	if err == nil {
 		n.p.Serve(prefix, func(msg *messages.MessageWrapper) *messages.MessageWrapper {
