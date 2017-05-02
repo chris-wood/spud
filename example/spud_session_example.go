@@ -39,6 +39,7 @@ func generateResponse(request *messages.MessageWrapper) *messages.MessageWrapper
 	 go p.Serve(prefix, generateResponse)
 	 p.Connect(prefix)
 
+	 fmt.Println("SENDING REQUEST FOR", prefix)
 	 requestInterest := interest.CreateWithName(prefix)
 	 requestWrapper := messages.Package(requestInterest)
 	 p.GetAsync(requestWrapper, displayResponse)
