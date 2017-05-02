@@ -108,6 +108,10 @@ func (c *TransportComponent) ProcessIngressMessages() {
 	}
 }
 
+func (c TransportComponent) Inject(msg *messages.MessageWrapper) {
+	c.ingress <- msg
+}
+
 func (c TransportComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }

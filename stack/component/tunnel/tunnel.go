@@ -96,6 +96,10 @@ func (c *Tunnel) ProcessIngressMessages() {
 	}
 }
 
+func (c *Tunnel) Inject(msg *messages.MessageWrapper) {
+	c.ingress <- msg
+}
+
 func (c *Tunnel) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
@@ -147,22 +151,35 @@ func (c *TunnelComponent) ProcessEgressMessages() {
 
 func (c *TunnelComponent) ProcessIngressMessages() {
 	for {
-		buffer := make(chan *messages.MessageWrapper)
+		//buffer := make(chan *messages.MessageWrapper)
+
+		if len(c.tunnels) == 0 {
+			msg := c.exitCodec.Pop()
+			if len(c.tunnels) > 0 {
+				fmt.Println("Reinstering into the tunnel")
+				c.tunnels[len(c.tunnels) - 1].downstream.Inject(msg)
+			} else {
+				c.ingress <- msg
+			}
+		} else {
+			msg := c.tunnels[0].Pop()
+			c.ingress <- msg
+		}
 
 		// XXX: the exit codec is stealing the message from the tunnel... causing it to not be decrypted, and things to fail
-		go func () {
-			buffer <- c.exitCodec.Pop()
-			log.Println("Received from codec")
-		}()
-		go func () {
-			if len(c.tunnels) > 0 {
-				buffer <- c.tunnels[0].Pop()
-				log.Println("Received from tunnel")
-			}
-		}()
-
-		msg := <-buffer
-		c.ingress <- msg
+		//go func () {
+		//	buffer <- c.exitCodec.Pop()
+		//	log.Println("Received from codec")
+		//}()
+		//go func () {
+		//	if len(c.tunnels) > 0 {
+		//		buffer <- c.tunnels[0].Pop()
+		//		log.Println("Received from tunnel")
+		//	}
+		//}()
+		//
+		//msg := <-buffer
+		//c.ingress <- msg
 
 		//select {
 		//case plainMsg := c.exitCodec.Pop():
@@ -175,6 +192,10 @@ func (c *TunnelComponent) ProcessIngressMessages() {
 		//	c.ingress <- tunneledMsg
 		//}
 	}
+}
+
+func (c *TunnelComponent) Inject(msg *messages.MessageWrapper) {
+	c.ingress <- msg
 }
 
 func (c *TunnelComponent) Push(msg *messages.MessageWrapper) {

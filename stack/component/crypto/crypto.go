@@ -177,6 +177,10 @@ func (c CryptoComponent) ProcessIngressMessages() {
 	}
 }
 
+func (c CryptoComponent) Inject(msg *messages.MessageWrapper) {
+	c.ingress <- msg
+}
+
 func (c CryptoComponent) Push(msg *messages.MessageWrapper) {
 	if msg == nil {
 		log.Println("Invalid message pushed into the crypto component")

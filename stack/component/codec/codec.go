@@ -160,6 +160,10 @@ func (c CodecComponent) ProcessIngressMessages() {
 	}
 }
 
+func (c CodecComponent) Inject(msg *messages.MessageWrapper) {
+	c.ingress <- msg
+}
+
 func (c CodecComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
