@@ -1,11 +1,12 @@
 package transport
 
-import "log"
-import "time"
-
-import "github.com/chris-wood/spud/codec"
-import "github.com/chris-wood/spud/messages"
-import "github.com/chris-wood/spud/stack/component"
+import (
+	"github.com/chris-wood/spud/messages"
+	"github.com/chris-wood/spud/codec"
+	"github.com/chris-wood/spud/stack/component"
+	"time"
+	"log"
+)
 
 type TimeoutEvent struct {
 	timer     chan bool
@@ -60,8 +61,7 @@ func NewTransportComponent(downstream component.Component) *TransportComponent {
 }
 
 func (c *TransportComponent) HandleTimeout(identity string) {
-	// XXX
-	log.Println("XXX: timeout handler not implemented")
+	log.Println("TODO: timeout handler not implemented")
 }
 
 func (c *TransportComponent) ProcessEgressMessages() {
@@ -73,6 +73,7 @@ func (c *TransportComponent) ProcessEgressMessages() {
 		// Start a timeout if it's a request
 		if msg.GetPacketType() == codec.T_INTEREST {
 			identifier := msg.Identifier()
+			log.Println(identifier)
 			c.pendingTable[identifier] = Start(identifier, time.Second, c.HandleTimeout)
 		}
 
@@ -99,6 +100,7 @@ func (c *TransportComponent) ProcessIngressMessages() {
 					c.ingress <- msg
 				}
 			} else {
+				log.Println(identifier)
 				log.Println("Unknown message received. Dropping.")
 			}
 		} else {

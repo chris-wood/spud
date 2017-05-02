@@ -1,6 +1,5 @@
 package crypto
 
-import "fmt"
 import "log"
 
 import "github.com/chris-wood/spud/codec"
@@ -77,8 +76,9 @@ func (c CryptoComponent) ProcessEgressMessages() {
 		var err error
 		msg, err = addAuthenticator(msg, c.cryptoProcessor)
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
+
 		c.downstream.Push(msg)
 
 		// Save a reocrd for all egress requests
@@ -134,9 +134,7 @@ func (c CryptoComponent) handleIngressResponse(msg *messages.MessageWrapper) {
 	// Check to see if this is a response to a previous key name
 	request, isPending := c.pendingMap[msg.Identifier()]
 	if isPending {
-
 		// XXX: how to identify the right processor? based on the name only?
-
 		if !c.cryptoProcessor.CanVerify(msg) {
 			// Pull out the key name
 			// XXX: here we'd swtich on the type of locator
@@ -180,7 +178,11 @@ func (c CryptoComponent) ProcessIngressMessages() {
 }
 
 func (c CryptoComponent) Push(msg *messages.MessageWrapper) {
-	c.egress <- msg
+	if msg == nil {
+		log.Println("Invalid message pushed into the crypto component")
+	} else {
+		c.egress <- msg
+	}
 }
 
 func (c CryptoComponent) Pop() *messages.MessageWrapper {

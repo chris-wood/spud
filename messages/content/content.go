@@ -5,7 +5,10 @@ import "fmt"
 import "github.com/chris-wood/spud/messages/name"
 import "github.com/chris-wood/spud/messages/kex"
 import "github.com/chris-wood/spud/messages/payload"
-import "github.com/chris-wood/spud/codec"
+import (
+	"github.com/chris-wood/spud/codec"
+	"log"
+)
 
 type Content struct {
 	name        *name.Name
@@ -72,7 +75,7 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
 			}
 			containers = append(containers, kex)
 		} else {
-			fmt.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
+			log.Printf("Unable to parse content TLV type: %d\n", tlv.Type())
 		}
 	}
 

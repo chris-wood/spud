@@ -132,6 +132,7 @@ func (c CodecComponent) ProcessIngressMessages() {
 			// Decode the message (skipping past the packet header)
 			decodedTlV := decoder.Decode(msgBytes[headerLength:])
 			message, err := messages.CreateFromTLV(decodedTlV)
+
 			if err == nil {
 				identity := message.Identifier()
 

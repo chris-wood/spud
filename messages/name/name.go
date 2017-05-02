@@ -158,7 +158,11 @@ func (n Name) AppendComponent(component string) (*Name, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Name{Segments: append(n.Segments, segment)}, nil
+	return &Name{Segments: append(n.Segments[:], segment)}, nil
+}
+
+func (n *Name) DropSuffix() {
+	n.Segments = n.Segments[0: len(n.Segments) - 1]
 }
 
 // String functions

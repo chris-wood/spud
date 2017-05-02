@@ -8,6 +8,7 @@ import (
 	"github.com/chris-wood/spud/messages/payload"
 	"github.com/chris-wood/spud/messages/interest"
 	"github.com/chris-wood/spud/messages/content"
+	"log"
 )
 
 type Tunnel struct {
@@ -19,6 +20,7 @@ type Tunnel struct {
 }
 
 type TunnelComponent struct {
+	tunnelNames map[*name.Name]bool
 	ingress   chan *messages.MessageWrapper
 	egress    chan *messages.MessageWrapper
 	exitCodec component.Component
@@ -32,7 +34,7 @@ func NewTunnel(session *Session, baseName *name.Name, downstream component.Compo
 	return &t
 }
 
-func (c Tunnel) ProcessEgressMessages() {
+func (c *Tunnel) ProcessEgressMessages() {
 	for {
 		msg := <-c.egress
 
@@ -56,7 +58,7 @@ func (c Tunnel) ProcessEgressMessages() {
 	}
 }
 
-func (c Tunnel) ProcessIngressMessages() {
+func (c *Tunnel) ProcessIngressMessages() {
 	for {
 		msg := c.downstream.Pop()
 		encryptedPayload := msg.InnerMessage().Payload().Value()
@@ -64,21 +66,24 @@ func (c Tunnel) ProcessIngressMessages() {
 		if err == nil {
 			d := codec.Decoder{}
 			decodedTlV := d.Decode(encapInterest)
-			if len(decodedTlV) == 1 {
-				responseMsg, err := messages.CreateFromTLV(decodedTlV)
-				if err == nil {
-					c.ingress <- responseMsg
-				}
+			responseMsg, err := messages.CreateFromTLV(decodedTlV)
+
+			//responseMsg.Name().DropSuffix() // Drop the session ID from the name
+
+			if err == nil {
+				c.ingress <- responseMsg
 			}
+		} else {
+			log.Println("Failed to decrypt packet")
 		}
 	}
 }
 
-func (c Tunnel) Push(msg *messages.MessageWrapper) {
+func (c *Tunnel) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c Tunnel) Pop() *messages.MessageWrapper {
+func (c *Tunnel) Pop() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }
@@ -86,24 +91,33 @@ func (c Tunnel) Pop() *messages.MessageWrapper {
 func NewTunnelComponent(exitComponent component.Component) *TunnelComponent {
 	egress := make(chan *messages.MessageWrapper)
 	ingress := make(chan *messages.MessageWrapper)
-	return &TunnelComponent{ingress: ingress, egress: egress, exitCodec: exitComponent, tunnels: make([]*Tunnel, 0)}
+	return &TunnelComponent{tunnelNames: make(map[*name.Name]bool), ingress: ingress, egress: egress, exitCodec: exitComponent, tunnels: make([]*Tunnel, 0)}
 }
 
 func (c *TunnelComponent) AddSession(session *Session, baseName *name.Name) {
+	if _, ok := c.tunnelNames[baseName]; ok {
+		log.Println("Tunnel already exists.")
+		return
+	}
+
+
 	if len(c.tunnels) == 0 {
 		tunnel := NewTunnel(session, baseName, c.exitCodec)
-		go tunnel.ProcessEgressMessages()
 		go tunnel.ProcessIngressMessages()
-		c.tunnels = append(c.tunnels, tunnel)
+		go tunnel.ProcessEgressMessages()
+		c.tunnels = []*Tunnel{tunnel}
 	} else {
 		tunnel := NewTunnel(session, baseName, c.tunnels[0])
-		go tunnel.ProcessEgressMessages()
 		go tunnel.ProcessIngressMessages()
+		go tunnel.ProcessEgressMessages()
 		c.tunnels = append([]*Tunnel{tunnel}, c.tunnels...)
 	}
+
+	// Add the tunnel to the list
+	c.tunnelNames[baseName] = true
 }
 
-func (c TunnelComponent) ProcessEgressMessages() {
+func (c *TunnelComponent) ProcessEgressMessages() {
 	for {
 		msg := <-c.egress
 		if len(c.tunnels) == 0 {
@@ -114,7 +128,7 @@ func (c TunnelComponent) ProcessEgressMessages() {
 	}
 }
 
-func (c TunnelComponent) ProcessIngressMessages() {
+func (c *TunnelComponent) ProcessIngressMessages() {
 	for {
 		if len(c.tunnels) == 0 {
 			msg := c.exitCodec.Pop()
@@ -126,11 +140,11 @@ func (c TunnelComponent) ProcessIngressMessages() {
 	}
 }
 
-func (c TunnelComponent) Push(msg *messages.MessageWrapper) {
+func (c *TunnelComponent) Push(msg *messages.MessageWrapper) {
 	c.egress <- msg
 }
 
-func (c TunnelComponent) Pop() *messages.MessageWrapper {
+func (c *TunnelComponent) Pop() *messages.MessageWrapper {
 	msg := <-c.ingress
 	return msg
 }

@@ -38,6 +38,7 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	bareHelloName, _ = bareHelloName.AppendComponent(randomSuffix)
 
 	// Send the bare hello
+	log.Println("Sending the hello")
 	bareHello := kex.KEXHello()
 	bareHelloRequest := interest.CreateWithName(bareHelloName)
 	bareHelloRequest.AddContainer(bareHello)
@@ -134,7 +135,11 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 		if established {
 			log.Println("Handling a request")
 			response := callback(requestWrapper)
-			n.apiStack.Push(response)
+			if response != nil {
+				n.apiStack.Push(response)
+			} else {
+				log.Println("Failed to generate a response")
+			}
 		} else {
 			request := requestWrapper.InnerMessage()
 			if !prefix.IsPrefix(request.Name()) {

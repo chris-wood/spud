@@ -7,6 +7,8 @@ import (
 	"github.com/chris-wood/spud/messages"
 	"github.com/chris-wood/spud/messages/interest"
 	"fmt"
+	"github.com/chris-wood/spud/messages/content"
+	"github.com/chris-wood/spud/messages/payload"
 )
 
 var done chan int
@@ -17,7 +19,10 @@ func displayResponse(response *messages.MessageWrapper) {
 }
 
 func generateResponse(request *messages.MessageWrapper) *messages.MessageWrapper {
-	return nil
+	data := []byte("Hello world")
+	dataPayload := payload.Create(data)
+	response := messages.Package(content.CreateWithNameAndPayload(request.Name(), dataPayload))
+	return response
 }
 
  func testSession() {
@@ -31,13 +36,11 @@ func generateResponse(request *messages.MessageWrapper) *messages.MessageWrapper
 
 	 prefix, _ := name.Parse("ccnx:/producer")
 
-	 p.Serve(prefix, generateResponse) // ditto below
-
+	 go p.Serve(prefix, generateResponse)
 	 p.Connect(prefix)
 
 	 requestInterest := interest.CreateWithName(prefix)
 	 requestWrapper := messages.Package(requestInterest)
-
 	 p.GetAsync(requestWrapper, displayResponse)
 
 	 // sleep until the consumer gets a response
