@@ -82,10 +82,14 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	copy(privateKey[:], hello.GetPrivateKeyShare())
 	box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
+	log.Println("Consumer key: ", sharedKey)
+
+	log.Println("Adding a consumer tunnel.")
 	session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
 	n.apiStack.AddSession(session, prefix)
+	log.Println("Done.")
 
-	log.Println("Consumer key: ", sharedKey)
+	time.Sleep(100 * time.Millisecond)
 }
 
 func (n SecurePortal) Get(request *messages.MessageWrapper, timeout time.Duration) (*messages.MessageWrapper, error) {
@@ -133,7 +137,7 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 		requestWrapper := n.apiStack.Pop()
 
 		if established {
-			log.Println("Handling a request")
+			log.Println("Handling a request", requestWrapper.Name())
 			response := callback(requestWrapper)
 			if response != nil {
 				n.apiStack.Push(response)
@@ -186,9 +190,11 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 				// callback(session)
 				time.Sleep(100 * time.Millisecond)
 
+				log.Println("Adding a tunnel session")
 				session := tunnel.NewSession(sharedKey[:], accept.GetSessionID())
 				n.apiStack.AddSession(session, prefix)
 				established = true
+				log.Println("Done.")
 
 				break
 

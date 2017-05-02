@@ -68,6 +68,7 @@ func CreateFromTLV(topLevelTLV codec.TLV) (*Content, error) {
 			}
 		} else if tlv.Type() == codec.T_PAYLOAD {
 			dataPayload = payload.Create(tlv.Value())
+  		// TODO(cawood): add case for PAYLOADTYPE
 		} else if tlv.Type() == codec.T_KEX {
 			kex, err := kex.CreateFromTLV(tlv)
 			if err != nil {

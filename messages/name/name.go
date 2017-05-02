@@ -1,9 +1,11 @@
 package name
 
-import "github.com/chris-wood/spud/codec"
-import "github.com/chris-wood/spud/messages/name_segment"
-import "strings"
-import "fmt"
+import (
+	"fmt"
+	"github.com/chris-wood/spud/codec"
+	"github.com/chris-wood/spud/messages/name_segment"
+	"strings"
+)
 
 // import "encoding/json"
 

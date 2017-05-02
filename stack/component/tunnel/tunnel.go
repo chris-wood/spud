@@ -9,6 +9,7 @@ import (
 	"github.com/chris-wood/spud/messages/interest"
 	"github.com/chris-wood/spud/messages/content"
 	"log"
+	"fmt"
 )
 
 type Tunnel struct {
@@ -17,6 +18,9 @@ type Tunnel struct {
 	baseName   *name.Name
 	downstream component.Component
 	session    *Session
+
+	// XXX: still needed?
+	nameMap map[*name.Name]*name.Name
 }
 
 type TunnelComponent struct {
@@ -30,7 +34,7 @@ type TunnelComponent struct {
 func NewTunnel(session *Session, baseName *name.Name, downstream component.Component) *Tunnel {
 	egress := make(chan *messages.MessageWrapper)
 	ingress := make(chan *messages.MessageWrapper)
-	t := Tunnel{ingress: ingress, egress: egress, baseName: baseName, downstream: downstream, session: session}
+	t := Tunnel{ingress: ingress, egress: egress, baseName: baseName, downstream: downstream, session: session, nameMap: make(map[*name.Name]*name.Name)}
 	return &t
 }
 
@@ -39,6 +43,10 @@ func (c *Tunnel) ProcessEgressMessages() {
 		msg := <-c.egress
 
 		encodedRequest := msg.Encode()
+
+		log.Println("Encrypting", msg.Name())
+		//fmt.Println(encodedRequest)
+
 		encryptedMessage, err := c.session.Encrypt(encodedRequest)
 		if err == nil {
 			sessionName, _ := c.baseName.AppendComponent(c.session.SessionID)
@@ -53,6 +61,7 @@ func (c *Tunnel) ProcessEgressMessages() {
 				encapResponse = messages.Package(content.CreateWithNameAndTypedPayload(sessionName, codec.T_PAYLOADTYPE_ENCAP, encapPayload))
 			}
 
+			c.nameMap[sessionName] = msg.Name()
 			c.downstream.Push(encapResponse)
 		}
 	}
@@ -63,14 +72,22 @@ func (c *Tunnel) ProcessIngressMessages() {
 		msg := c.downstream.Pop()
 		encryptedPayload := msg.InnerMessage().Payload().Value()
 		encapInterest, err := c.session.Decrypt(encryptedPayload)
+
+		log.Println("Decrypting", msg.Identifier())
+
+		//fmt.Println("DECAPSULATED INTEREST", encapInterest)
+
 		if err == nil {
 			d := codec.Decoder{}
 			decodedTlV := d.Decode(encapInterest)
 			responseMsg, err := messages.CreateFromTLV(decodedTlV)
 
-			//responseMsg.Name().DropSuffix() // Drop the session ID from the name
+			//log.Println(responseMsg.Identifier())
+			//log.Println(responseMsg.InnerMessage().Payload())
+			//log.Println(msg.Identifier())
 
 			if err == nil {
+				fmt.Println("Sending up decoded,", responseMsg)
 				c.ingress <- responseMsg
 			}
 		} else {
@@ -103,13 +120,13 @@ func (c *TunnelComponent) AddSession(session *Session, baseName *name.Name) {
 
 	if len(c.tunnels) == 0 {
 		tunnel := NewTunnel(session, baseName, c.exitCodec)
-		go tunnel.ProcessIngressMessages()
 		go tunnel.ProcessEgressMessages()
+		go tunnel.ProcessIngressMessages()
 		c.tunnels = []*Tunnel{tunnel}
 	} else {
 		tunnel := NewTunnel(session, baseName, c.tunnels[0])
-		go tunnel.ProcessIngressMessages()
 		go tunnel.ProcessEgressMessages()
+		go tunnel.ProcessIngressMessages()
 		c.tunnels = append([]*Tunnel{tunnel}, c.tunnels...)
 	}
 
@@ -130,13 +147,33 @@ func (c *TunnelComponent) ProcessEgressMessages() {
 
 func (c *TunnelComponent) ProcessIngressMessages() {
 	for {
-		if len(c.tunnels) == 0 {
-			msg := c.exitCodec.Pop()
-			c.ingress <- msg
-		} else {
-			msg := c.tunnels[0].Pop()
-			c.ingress <- msg
-		}
+		buffer := make(chan *messages.MessageWrapper)
+
+		// XXX: the exit codec is stealing the message from the tunnel... causing it to not be decrypted, and things to fail
+		go func () {
+			buffer <- c.exitCodec.Pop()
+			log.Println("Received from codec")
+		}()
+		go func () {
+			if len(c.tunnels) > 0 {
+				buffer <- c.tunnels[0].Pop()
+				log.Println("Received from tunnel")
+			}
+		}()
+
+		msg := <-buffer
+		c.ingress <- msg
+
+		//select {
+		//case plainMsg := c.exitCodec.Pop():
+		//	log.Println(len(c.tunnels))
+		//	log.Println("Processing ingress", plainMsg.Name())
+		//	c.ingress <- plainMsg
+		//case tunneledMsg := c.tunnels[0].Pop():
+		//	log.Println(len(c.tunnels))
+		//	log.Println("Processing tunneled ingress", tunneledMsg.Name())
+		//	c.ingress <- tunneledMsg
+		//}
 	}
 }
 

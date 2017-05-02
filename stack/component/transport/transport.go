@@ -73,7 +73,6 @@ func (c *TransportComponent) ProcessEgressMessages() {
 		// Start a timeout if it's a request
 		if msg.GetPacketType() == codec.T_INTEREST {
 			identifier := msg.Identifier()
-			log.Println(identifier)
 			c.pendingTable[identifier] = Start(identifier, time.Second, c.HandleTimeout)
 		}
 
@@ -100,7 +99,6 @@ func (c *TransportComponent) ProcessIngressMessages() {
 					c.ingress <- msg
 				}
 			} else {
-				log.Println(identifier)
 				log.Println("Unknown message received. Dropping.")
 			}
 		} else {
