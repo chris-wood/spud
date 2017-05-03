@@ -14,7 +14,10 @@ import "github.com/chris-wood/spud/messages/interest"
 import "github.com/chris-wood/spud/messages/content"
 
 // XXX: wrap this in the crypto box
-import "golang.org/x/crypto/nacl/box"
+import (
+	"golang.org/x/crypto/nacl/box"
+	"encoding/hex"
+)
 
 const connectString string = "CONNECT"
 
@@ -82,14 +85,10 @@ func (n SecurePortal) Connect(prefix *name.Name) {
 	copy(privateKey[:], hello.GetPrivateKeyShare())
 	box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-	log.Println("Consumer key: ", sharedKey)
+	log.Println("Consumer key: ", hex.EncodeToString(sharedKey[:]))
 
-	log.Println("Adding a consumer tunnel.")
 	session := tunnel.NewSession(sharedKey[:], acceptKEX.GetSessionID())
 	n.apiStack.AddSession(session, prefix)
-	log.Println("Done.")
-
-	time.Sleep(100 * time.Millisecond)
 }
 
 func (n SecurePortal) Get(request *messages.MessageWrapper, timeout time.Duration) (*messages.MessageWrapper, error) {
@@ -136,6 +135,7 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 	for {
 		requestWrapper := n.apiStack.Pop()
 
+		// TODO(cawood): check the session ID to ensure that we have a live session
 		if established {
 			log.Println("Handling a request", requestWrapper.Name())
 			response := callback(requestWrapper)
@@ -183,18 +183,13 @@ func (n SecurePortal) Serve(prefix *name.Name, callback RequestMessageCallback) 
 				copy(privateKey[:], accept.GetPrivateKeyShare())
 				box.Precompute(&sharedKey, &peerPublic, &privateKey)
 
-				log.Println("Producer key:", sharedKey)
+				log.Println("Producer key:", hex.EncodeToString(sharedKey[:]))
 
 				// Create and start the session
-				// session := esic.NewESIC(n.apiStack, sharedKey[:], accept.GetSessionID())
-				// callback(session)
-				time.Sleep(100 * time.Millisecond)
-
-				log.Println("Adding a tunnel session")
+				time.Sleep(50 * time.Millisecond)
 				session := tunnel.NewSession(sharedKey[:], accept.GetSessionID())
 				n.apiStack.AddSession(session, prefix)
 				established = true
-				log.Println("Done.")
 
 				break
 
