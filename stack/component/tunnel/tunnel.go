@@ -43,10 +43,6 @@ func (c *Tunnel) ProcessEgressMessages() {
 		msg := <-c.egress
 
 		encodedRequest := msg.Encode()
-
-		log.Println("Encrypting", msg.Name())
-		//fmt.Println(encodedRequest)
-
 		encryptedMessage, err := c.session.Encrypt(encodedRequest)
 		if err == nil {
 			sessionName, _ := c.baseName.AppendComponent(c.session.SessionID)
@@ -72,20 +68,10 @@ func (c *Tunnel) ProcessIngressMessages() {
 		msg := c.downstream.Pop()
 		encryptedPayload := msg.InnerMessage().Payload().Value()
 		encapInterest, err := c.session.Decrypt(encryptedPayload)
-
-		log.Println("Decrypting", msg.Identifier())
-
-		//fmt.Println("DECAPSULATED INTEREST", encapInterest)
-
 		if err == nil {
 			d := codec.Decoder{}
 			decodedTlV := d.Decode(encapInterest)
 			responseMsg, err := messages.CreateFromTLV(decodedTlV)
-
-			//log.Println(responseMsg.Identifier())
-			//log.Println(responseMsg.InnerMessage().Payload())
-			//log.Println(msg.Identifier())
-
 			if err == nil {
 				fmt.Println("Sending up decoded,", responseMsg)
 				c.ingress <- responseMsg
@@ -154,7 +140,6 @@ func (c *TunnelComponent) ProcessIngressMessages() {
 		if len(c.tunnels) == 0 {
 			msg := c.exitCodec.Pop()
 			if len(c.tunnels) > 0 {
-				fmt.Println("Reinstering into the tunnel")
 				c.tunnels[len(c.tunnels) - 1].downstream.Inject(msg)
 			} else {
 				c.ingress <- msg
