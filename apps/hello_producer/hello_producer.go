@@ -14,7 +14,7 @@ func generateResponse(prefix string, payload []byte) []byte {
 func serve(prefix string) {
 	myStack, _ := spud.CreateRaw(`{"connector": "athena", "link": "tcp", "fwdaddress": "127.0.0.1:9696", "keys": ["key.p12"]}`)
 	ccnPortal := portal.NewSecurePortal(myStack)
-	api := adapter.NewKVSAPI(ccnPortal)
+	api := store.NewStoreAPI(ccnPortal)
 
 	done := make(chan int)
 

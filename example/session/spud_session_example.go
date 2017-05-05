@@ -1,4 +1,4 @@
-package main
+package session
 
 import (
 	"github.com/chris-wood/spud/stack/api/portal"
@@ -7,18 +7,18 @@ import (
 	"github.com/chris-wood/spud/messages"
 	"github.com/chris-wood/spud/messages/interest"
 	"fmt"
-	"github.com/chris-wood/spud/messages/content"
 	"github.com/chris-wood/spud/messages/payload"
+	"github.com/chris-wood/spud/messages/content"
 )
 
-var done chan int
+var session_done chan int
 
-func displayResponse(response *messages.MessageWrapper) {
+func displayMessageResponse(response *messages.MessageWrapper) {
 	fmt.Println("Response: " + string(response.Payload().Value()))
-	done <- 1
+	session_done <- 1
 }
 
-func generateResponse(request *messages.MessageWrapper) *messages.MessageWrapper {
+func generateMessageResponse(request *messages.MessageWrapper) *messages.MessageWrapper {
 	data := []byte("Hello world")
 	dataPayload := payload.Create(data)
 	response := messages.Package(content.CreateWithNameAndPayload(request.Name(), dataPayload))
@@ -30,22 +30,22 @@ func generateResponse(request *messages.MessageWrapper) *messages.MessageWrapper
 	 if err != nil {
 		 panic("Could not create the stack")
 	 }
-	 done = make(chan int)
+	 session_done = make(chan int)
 
 	 p := portal.NewSecurePortal(myStack)
 
 	 prefix, _ := name.Parse("ccnx:/producer")
 
-	 go p.Serve(prefix, generateResponse)
+	 go p.Serve(prefix, generateMessageResponse)
 	 p.Connect(prefix)
 
 	 fmt.Println("SENDING REQUEST FOR", prefix)
 	 requestInterest := interest.CreateWithName(prefix)
 	 requestWrapper := messages.Package(requestInterest)
-	 p.GetAsync(requestWrapper, displayResponse)
+	 p.GetAsync(requestWrapper, displayMessageResponse)
 
 	 // sleep until the consumer gets a response
-	 <- done
+	 <- session_done
  }
 
 func main() {

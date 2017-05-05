@@ -39,7 +39,7 @@ func (s CCFTPServer) loadFile(name string, response []byte) []byte {
 func (s CCFTPServer) serve(directory string) {
 	myStack, _ := spud.CreateRaw("")
 	ccnPortal := portal.NewPortal(myStack)
-	api := adapter.NewKVSAPI(ccnPortal)
+	api := store.NewStoreAPI(ccnPortal)
 	api.Serve(s.prefix, s.loadFile)
 }
 

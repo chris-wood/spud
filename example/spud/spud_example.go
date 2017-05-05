@@ -1,4 +1,4 @@
-package main
+package spud
 
 import "fmt"
 import "time"

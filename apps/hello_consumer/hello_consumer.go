@@ -19,7 +19,7 @@ func get(nameString string) {
 	ccnPortal := portal.NewSecurePortal(myStack)
 	prefix, _ := name.Parse(nameString)
 	ccnPortal.Connect(prefix)
-	api := adapter.NewKVSAPI(ccnPortal)
+	api := store.NewStoreAPI(ccnPortal)
 
 	done = make(chan int)
 

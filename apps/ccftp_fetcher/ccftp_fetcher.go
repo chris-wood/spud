@@ -18,7 +18,7 @@ func displayResponse(response []byte) {
 func (f CCFTPFetcher) fetch(file string) {
 	myStack, _ := spud.CreateRaw("")
 	ccnPortal := portal.NewPortal(myStack)
-	api := adapter.NewKVSAPI(ccnPortal)
+	api := store.NewStoreAPI(ccnPortal)
 
 	// XXX: build the name based on the prefix and file
 
