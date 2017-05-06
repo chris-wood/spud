@@ -44,9 +44,7 @@ func (p SizedDataPointer) Value() []byte {
 }
 
 func (p SizedDataPointer) Length() uint16 {
-	e := codec.Encoder{}
-	encodedValue := e.EncodeTLV(p)
-	return uint16(len(encodedValue))
+	return uint16(len(p.Value()))
 }
 
 func (p SizedDataPointer) Children() []codec.TLV {

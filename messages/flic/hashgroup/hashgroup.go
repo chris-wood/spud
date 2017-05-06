@@ -6,7 +6,7 @@ import (
 	"github.com/chris-wood/spud/codec"
 )
 
-const FLICPointerLimit int = 10
+const FLICPointerLimit int = 2
 
 type HashGroupMetadata struct {
 	Locator           name.Name
@@ -75,9 +75,7 @@ func (g HashGroup) Value() []byte {
 }
 
 func (g HashGroup) Length() uint16 {
-	e := codec.Encoder{}
-	encodedValue := e.EncodeTLV(g)
-	return uint16(len(encodedValue))
+	return uint16(len(g.Value()))
 }
 
 func (g HashGroup) Children() []codec.TLV {

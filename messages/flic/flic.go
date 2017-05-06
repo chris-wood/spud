@@ -92,9 +92,7 @@ func (f FLIC) Value() []byte {
 }
 
 func (f FLIC) Length() uint16 {
-	e := codec.Encoder{}
-	encodedValue := e.EncodeTLV(f)
-	return uint16(len(encodedValue))
+	return uint16(len(f.Value()))
 }
 
 func (f FLIC) Children() []codec.TLV {

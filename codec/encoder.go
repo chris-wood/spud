@@ -1,6 +1,8 @@
 package codec
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 type Encoder struct {
 }
@@ -24,7 +26,8 @@ func (e Encoder) EncodeTLV(tlv TLV) []byte {
 	binary.BigEndian.PutUint16(nsLength, tlv.Length())
 
 	tlTuple := append(nsType, nsLength...)
-	return append(tlTuple, tlv.Value()...)
+	tlTuple = append(tlTuple, tlv.Value()...)
+	return tlTuple
 }
 
 func (e Encoder) Encode(tlvList []TLV) []byte {

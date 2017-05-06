@@ -6,8 +6,9 @@ import "io/ioutil"
 import "testing"
 
 func TestCreate(t *testing.T) {
-	data := make([]byte, 1024)
-	for i := 0; i < 1024; i++ {
+	dataSize := 1024
+	data := make([]byte, dataSize)
+	for i := 0; i < dataSize; i++ {
 		data[i] = uint8(i)
 	}
 

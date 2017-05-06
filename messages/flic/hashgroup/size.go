@@ -1,8 +1,9 @@
 package hashgroup
 
-import "github.com/chris-wood/spud/codec"
-
-import "encoding/binary"
+import (
+	"github.com/chris-wood/spud/codec"
+	"encoding/binary"
+)
 
 type Size struct {
 	sizeType uint16
@@ -22,13 +23,13 @@ func (s Size) TypeString() string {
 }
 
 func (s Size) Value() []byte {
-	value := make([]byte, 4)
+	value := make([]byte, 8)
 	binary.LittleEndian.PutUint64(value, s.size)
 	return value
 }
 
 func (s Size) Length() uint16 {
-	return uint16(4) // fixed size of 64bits
+	return uint16(8) // fixed size of 64bits
 }
 
 func (s Size) Children() []codec.TLV {
