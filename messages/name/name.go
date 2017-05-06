@@ -170,5 +170,5 @@ func (n *Name) DropSuffix() {
 // String functions
 
 func (n Name) String() string {
-	return "ccnx:" + n.Prefix(len(n.Segments))
+	return n.Prefix(len(n.Segments))
 }
