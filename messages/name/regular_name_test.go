@@ -11,6 +11,7 @@ func TestCreateFromString(t *testing.T) {
 		match bool
 	}{
 		{"^<foo><bar>$", "/foo/bar", true},
+		{"^<foo>", "/foo/bar", true},
 	}
 
 	for _, c := range cases {

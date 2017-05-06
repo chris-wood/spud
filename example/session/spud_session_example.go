@@ -1,4 +1,4 @@
-package session
+package main
 
 import (
 	"github.com/chris-wood/spud/stack/api/portal"
