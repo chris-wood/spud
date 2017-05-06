@@ -9,7 +9,6 @@ import (
 	"github.com/chris-wood/spud/codec"
 	"github.com/chris-wood/spud/util/chunker"
 	"crypto/sha256"
-	"fmt"
 )
 
 func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) []*messages.MessageWrapper {

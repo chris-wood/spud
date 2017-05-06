@@ -1,7 +1,9 @@
 package context
 
-import "github.com/chris-wood/spud/stack/component/crypto/context/schema"
-import "fmt"
+import (
+	"github.com/chris-wood/spud/stack/component/crypto/context/schema"
+	"fmt"
+)
 
 type TrustStore struct {
 	trustedKeys map[string]interface{}
