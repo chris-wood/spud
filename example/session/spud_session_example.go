@@ -6,9 +6,9 @@ import (
 	"github.com/chris-wood/spud/stack/spud"
 	"github.com/chris-wood/spud/messages"
 	"github.com/chris-wood/spud/messages/interest"
-	"fmt"
 	"github.com/chris-wood/spud/messages/payload"
 	"github.com/chris-wood/spud/messages/content"
+	"fmt"
 )
 
 var session_done chan int
