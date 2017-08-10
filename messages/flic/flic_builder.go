@@ -11,7 +11,9 @@ import (
 	"crypto/sha256"
 )
 
-func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) []*messages.MessageWrapper {
+// TODO(caw): implement the encrypted variant here
+
+func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
 	root := hashgroup.CreateEmptyHashGroup()
 	collection := make([]*messages.MessageWrapper, 0)
 
@@ -49,5 +51,5 @@ func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) []*messages.MessageW
 	rootMessage := messages.Package(rootFLIC)
 	collection = append(collection, rootMessage)
 
-	return collection
+	return rootMessage, collection
 }

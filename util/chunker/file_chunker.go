@@ -2,6 +2,7 @@ package chunker
 
 import "os"
 import "bufio"
+import "hash"
 
 type FileChunker struct {
 	Fname        string
@@ -46,4 +47,15 @@ func NewFileChunker(fname string, chunkSize int) (*FileChunker, error) {
 
 func (f *FileChunker) GetChannel() chan Chunk {
 	return f.chunkChannel
+}
+
+func (f *FileChunker) Hash(hasher hash.Hash) []byte {
+    tmp := make(chan Chunk, f.NumChunks)
+    for chunk := range f.chunkChannel {
+        hasher.Write(chunk)
+        tmp <- chunk // Append back to the normal channel
+    }
+    f.chunkChannel = tmp
+
+    return hasher.Sum(nil)
 }

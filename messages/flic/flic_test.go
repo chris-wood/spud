@@ -25,12 +25,15 @@ func TestCreate(t *testing.T) {
 		t.Error("Unable to create the file chunker:", err)
 	}
 
-	messages := CreateFLICTreeFromChunker(fChunker)
+	root, messages := CreateFLICTreeFromChunker(fChunker)
 
-	// XXX: compute the expected number of FLIC entries
+    if root == nil {
+        t.Error("Root is invalid")
+    }
 
-	if len(messages) == 0 {
-		t.Error("Invalid message collection returned")
+    expected := 5
+	if len(messages) != expected {
+		t.Error("Invalid message collection returned, got {}, expected {}", expected, len(messages))
 	}
 	t.Log(len(messages))
 }
