@@ -11,8 +11,6 @@ import (
 	"crypto/sha256"
 )
 
-// TODO(caw): implement the encrypted variant here
-
 func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
 	root := hashgroup.CreateEmptyHashGroup()
 	collection := make([]*messages.MessageWrapper, 0)

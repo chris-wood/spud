@@ -1,10 +1,10 @@
 package chunker
 
-import "hash"
-
 type Chunk []byte
+
+type ChunkFunc func(acc interface{}, chunk Chunk) (interface{}, interface{})
 
 type Chunker interface {
 	GetChannel() chan Chunk
-    // Hash(hasher hash.Hash) []byte
+    Apply(f ChunkFunc, acc interface{}) interface{}
 }

@@ -49,6 +49,21 @@ func (f *FileChunker) GetChannel() chan Chunk {
 	return f.chunkChannel
 }
 
+func (f *FileChunker) Apply(chunkFunc ChunkFunc, acc interface{}) interface{} {
+    tmp := make(chan Chunk, f.NumChunks)
+    var result interface{}
+    for chunk := range f.chunkChannel {
+        acc, result = chunkFunc(acc, chunk)
+        tmp <- chunk // Append back to the normal channel
+    }
+    close(tmp)
+
+    // Reset the chunk channel
+    f.chunkChannel = tmp
+
+    return result
+}
+
 func (f *FileChunker) Hash(hasher hash.Hash) []byte {
     tmp := make(chan Chunk, f.NumChunks)
     for chunk := range f.chunkChannel {
