@@ -2,6 +2,7 @@ package flic
 
 import (
 	"github.com/chris-wood/spud/messages"
+	"github.com/chris-wood/spud/messages/name"
 	"github.com/chris-wood/spud/messages/hash"
 	"github.com/chris-wood/spud/messages/flic/hashgroup"
 	"github.com/chris-wood/spud/messages/payload"
@@ -9,9 +10,50 @@ import (
 	"github.com/chris-wood/spud/codec"
 	"github.com/chris-wood/spud/util/chunker"
 	"crypto/sha256"
+	"golang.org/x/crypto/hkdf"
+	"io"
+	"crypto/aes"
+	"crypto/cipher"
+	//"golang.org/x/crypto/xts"
 )
 
-func CreateFLICTreeFromChunker(dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
+func BuildEncryptedFLICTreeFromChunker(rootName name.Name, dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
+    digest := dataChunker.Hash(sha256.New())
+
+    // Derive the CLEAN key
+	info := []byte(rootName.String())
+	salt := []byte{ } // TODO(caw): this would be the secret value provided by the producer, if available
+	kdf := hkdf.New(sha256.New, digest, salt, info)
+
+	masterKey := make([]byte, 32)
+	_, err := io.ReadFull(kdf, masterKey)
+	if err != nil {
+		panic(err)
+	}
+
+	// Create the encryptor
+	// TODO(caw): this should really be XTS
+	block, err := aes.NewCipher(masterKey)
+	if err != nil {
+		panic(err)
+	}
+	iv := make([]byte, 12)
+	encryptor := cipher.NewCTR(block, iv)
+
+
+	// Create the encryptor function
+	functor := func(encryptor interface{}, chunk chunker.Chunk) (interface{}, chunker.Chunk) {
+		encryptedChunk := make(chunker.Chunk, len(chunk))
+		encryptor.(cipher.Stream).XORKeyStream(encryptedChunk, chunk)
+		return encryptor, encryptedChunk
+	}
+	newChunker := dataChunker.Map(functor, encryptor).(chunker.Chunker)
+
+	return BuildFLICTreeFromChunker(newChunker)
+}
+
+// TODO(caw): this needs to accept a root name
+func BuildFLICTreeFromChunker(dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
 	root := hashgroup.CreateEmptyHashGroup()
 	collection := make([]*messages.MessageWrapper, 0)
 

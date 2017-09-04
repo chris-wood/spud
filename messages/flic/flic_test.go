@@ -25,7 +25,7 @@ func TestCreate(t *testing.T) {
 		t.Error("Unable to create the file chunker:", err)
 	}
 
-	root, messages := CreateFLICTreeFromChunker(fChunker)
+	root, messages := BuildFLICTreeFromChunker(fChunker)
 
     if root == nil {
         t.Error("Root is invalid")
