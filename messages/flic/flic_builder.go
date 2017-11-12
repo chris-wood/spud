@@ -17,6 +17,8 @@ import (
 	//"golang.org/x/crypto/xts"
 )
 
+// TODO(caw): the API should let clients specify a name, secret, and chunker -- CLEAN/FLIC handle the rest
+
 func BuildEncryptedFLICTreeFromChunker(rootName name.Name, dataChunker chunker.Chunker) (*messages.MessageWrapper, []*messages.MessageWrapper) {
     digest := dataChunker.Hash(sha256.New())
 
